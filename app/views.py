@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, abort
-from flask_login import LoginManager, login_user
+from flask_login import LoginManager, login_user, login_required, logout_user
 
 from app.models.user import User
 from app.models.user_accounts import UserAccounts
@@ -73,6 +73,14 @@ def login():
 
     else:
         return jsonify({"Warning": 'Invalid Username, The Username does not exist'})
+
+
+# Logout route
+@app.route('/api/v1/logout')
+@login_required
+def logout():
+    logout_user()
+    return jsonify({"success": 'You are logged out'})
 
 
 if __name__ == '__main__':
