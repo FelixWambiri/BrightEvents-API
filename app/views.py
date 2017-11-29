@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, abort
-from flask_login import LoginManager, login_user, login_required, logout_user
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
+from app.models.event import Event
 from app.models.user import User
 from app.models.user_accounts import UserAccounts
 
@@ -81,6 +82,28 @@ def login():
 def logout():
     logout_user()
     return jsonify({"success": 'You are logged out'})
+
+
+# User crud operations
+# Create an event
+@app.route('/api/v1/create_events', methods=['POST'])
+@login_required
+def create_events():
+    data = request.get_json()
+    name = data['name']
+    category = data['category']
+    location = data['location']
+    owner = data['owner']
+    description = data['description']
+    if name is None or category is None or location is None or owner is None:
+        abort(400)
+    event = Event(name=name, category=category, location=location, owner=owner, description=description)
+    try:
+        current_user.create_event(event)
+        user_accounts.add_all_individual_events(current_user)
+        return jsonify({"Success": "Event created successfully"})
+    except KeyError:
+        return jsonify({"Warning": 'The event already exists'})
 
 
 if __name__ == '__main__':
