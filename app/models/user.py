@@ -1,4 +1,7 @@
-class User:
+from flask_login import UserMixin
+
+
+class User(UserMixin):
     """
     Blue print for creating the user of the app
     With all their attributes and methods
