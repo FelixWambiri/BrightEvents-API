@@ -45,11 +45,11 @@ def register():
     if username is None or email is None or password is None or confirm_password is None:
         abort(400)
     if user_accounts.get_specific_user(username):
-        return jsonify({"msg": "User already exists, choose another username"})
+        return jsonify({"Warning": "User already exists, choose another username"})
     else:
         user = User(username=username, email=email, password=password, confirm_password=confirm_password)
         user_accounts.create_user(user)
-        response = jsonify({"msg": "You have been registered successfully and can proceed to login"})
+        response = jsonify({"Success": "You have been registered successfully and can proceed to login"})
         response.status_code = 201
         return response
 
@@ -125,6 +125,17 @@ def update_events(event_name):
         return jsonify({'success': 'The event has been updated successfully',
                         "event": {"name": event.name, "category": event.category, "location": event.location,
                                   "owner": owner, "description": event.description}})
+    except KeyError:
+        return jsonify({'warning': 'The event does not exist'})
+
+
+# Delete an event
+@app.route('/api/v1/delete_events/<string:event_name>', methods=['DELETE'])
+@login_required
+def delete_events(event_name):
+    try:
+        current_user.delete_event(event_name)
+        return jsonify({"Success": "Event deleted successfully"})
     except KeyError:
         return jsonify({'warning': 'The event does not exist'})
 
