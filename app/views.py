@@ -157,5 +157,21 @@ def get_all_events():
         return jsonify({'Info': "No event created so far"})
 
 
+# Route to rsvp to an event
+@app.route('/api/v1/event/<event_name>/rsvp', methods=['POST'])
+@login_required
+def rsvp_event(event_name):
+    event_dict = user_accounts.events
+    if len(event_dict) > 0:
+        event = event_dict.get(event_name)
+        event.add_attendants(current_user)
+        for attendee in event.event_attendees:
+            return jsonify({'success': 'You have rsvp into an event successfully',
+                            "attendant": {"name": attendee.id, "email": attendee.email}})
+
+    else:
+        return jsonify({"Info": "No one has rsvp to your event"})
+
+
 if __name__ == '__main__':
     app.run()
