@@ -101,9 +101,32 @@ def create_events():
     try:
         current_user.create_event(event)
         user_accounts.add_all_individual_events(current_user)
-        return jsonify({"Success": "Event created successfully"})
+        return jsonify({"Success": "Event created successfully",
+                        "event": {"name": event.name, "category": event.category, "location": event.location,
+                                  "owner": owner, "description": event.description}})
     except KeyError:
         return jsonify({"Warning": 'The event already exists'})
+
+
+# Update an Event
+# Name field should not be editable
+@app.route('/api/v1/update_events/<string:event_name>', methods=['PUT'])
+@login_required
+def update_events(event_name):
+    data = request.get_json()
+    category = data['category']
+    location = data['location']
+    owner = data['owner']
+    description = data['description']
+
+    try:
+        event = current_user.update_event(event_name, category=category, location=location, owner=owner,
+                                          description=description)
+        return jsonify({'success': 'The event has been updated successfully',
+                        "event": {"name": event.name, "category": event.category, "location": event.location,
+                                  "owner": owner, "description": event.description}})
+    except KeyError:
+        return jsonify({'warning': 'The event does not exist'})
 
 
 if __name__ == '__main__':
