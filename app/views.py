@@ -139,6 +139,23 @@ def delete_events(event_name):
     except KeyError:
         return jsonify({'warning': 'The event does not exist'})
 
+        # Retrieves all events
+
+
+# Route to display all events
+@app.route('/api/v1/get_all_events', methods=['GET'])
+@login_required
+def get_all_events():
+    if current_user.get_number_of_events() > 0:
+        # list to store all events
+        events = []
+        for event in current_user.events_dict.values():
+            # add events into list by  appending them
+            events.append({'name': event.name, "category": event.category, "location": event.location})
+        return jsonify({'Events': events})
+    else:
+        return jsonify({'Info': "No event created so far"})
+
 
 if __name__ == '__main__':
     app.run()
