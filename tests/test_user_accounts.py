@@ -69,23 +69,23 @@ class TestUserAccounts(unittest.TestCase):
         self.assertEqual(3, len(self.user_accounts.users))
 
         # deregister user1
-        self.user_accounts.delete_user("Johny")
+        self.user_accounts.delete_user("johny@bravo.com")
         self.assertEqual(2, len(self.user_accounts.users))
 
         # Derigester user2 and user3
-        self.user_accounts.delete_user("Fellow1")
-        self.user_accounts.delete_user("Ricky")
+        self.user_accounts.delete_user("fellow1@andela.com")
+        self.user_accounts.delete_user("ricky@morty.com")
         self.assertEqual(0, len(self.user_accounts.users))
 
     # Test that an attempt to deregister a user not in existence raises an exception
     def test_deregistration_of_a_non_existent_user_raises_exception(self):
         self.user4 = User("Johny", "johny@bravo.com", "johnybravobravo")
-        self.assertRaises(KeyError, self.user_accounts.delete_user, "Johny")
+        self.assertRaises(KeyError, self.user_accounts.delete_user, "johny@bravo.com")
 
     # Test that the method get_specific_user returns that specified user
     def test_that_get_specific_user_returns_correct_output(self):
         self.user_accounts.create_user(self.user1)
-        self.assertIs(self.user1, self.user_accounts.get_specific_user("Johny"))
+        self.assertIs(self.user1, self.user_accounts.get_specific_user("johny@bravo.com"))
 
     # Test that users individual events are added into the general events dictionary
     def test_add_all_individual_events_method_works_correctly(self):
