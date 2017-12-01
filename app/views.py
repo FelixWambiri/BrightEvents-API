@@ -29,8 +29,8 @@ user_accounts = UserAccounts()
 
 # Callback method to reload the user object
 @login_manager.user_loader
-def load_user(username):
-    return user_accounts.get_specific_user(username)
+def load_user(email):
+    return user_accounts.get_specific_user(email)
 
 
 # Registration route
@@ -57,13 +57,13 @@ def register():
 @app.route('/api/v1/auth/login', methods=['POST'])
 def login():
     data = request.get_json()
-    username = data['username']
+    email = data['email']
     password_f = data['password']
-    if username is None or password_f is None:
+    if email is None or password_f is None:
         abort(400)
-    if user_accounts.get_specific_user(username):
-        if user_accounts.get_specific_user(username).compare_hashed_password(password_f):
-            login_user(user_accounts.get_specific_user(username))
+    if user_accounts.get_specific_user(email):
+        if user_accounts.get_specific_user(email).compare_hashed_password(password_f):
+            login_user(user_accounts.get_specific_user(email))
             response = jsonify({"Success": "You were successfully logged in"})
             response.status_code = 200  # Ok
             return response
