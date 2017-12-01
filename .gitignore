@@ -1,3 +1,5 @@
 .idea/
 APIvenv/
-
+app/__pycache__/
+app/instance/__pycache__/
+app/models/__pycache__/
