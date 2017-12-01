@@ -47,7 +47,7 @@ def register():
     if user_accounts.get_specific_user(username):
         return jsonify({"Warning": "User already exists, choose another username"})
     else:
-        user = User(username=username, email=email, password=password, confirm_password=confirm_password)
+        user = User(username=username, email=email, password=password)
         user_accounts.create_user(user)
         response = jsonify({"Success": "You have been registered successfully and can proceed to login"})
         response.status_code = 201  # Created
