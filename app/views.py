@@ -41,8 +41,7 @@ def register():
     username = data['username']
     email = data['email']
     password = data['password']
-    confirm_password = data['confirm_password']
-    if username is None or email is None or password is None or confirm_password is None:
+    if username is None or email is None or password is None:
         abort(400)
     if user_accounts.get_specific_user(username):
         return jsonify({"Warning": "User already exists, choose another username"})
@@ -63,7 +62,7 @@ def login():
     if username is None or password_f is None:
         abort(400)
     if user_accounts.get_specific_user(username):
-        if password_f == user_accounts.get_specific_user(username).password:
+        if user_accounts.get_specific_user(username).compare_hashed_password(password_f):
             login_user(user_accounts.get_specific_user(username))
             response = jsonify({"Success": "You were successfully logged in"})
             response.status_code = 200  # Ok
