@@ -1,4 +1,5 @@
 from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 class User(UserMixin):
@@ -10,8 +11,12 @@ class User(UserMixin):
     def __init__(self, username, email, password):
         self.id = username
         self.email = email
-        self.password = password
+        self.pw_hash = generate_password_hash(password)
         self.events_dict = {}
+
+    # Method to verify the hashed password
+    def compare_hashed_password(self, password):
+        return check_password_hash(self.pw_hash, password)
 
     # Create an event whereby name is key
     # But first check if the event already exists
@@ -57,3 +62,4 @@ class User(UserMixin):
     # Method to return the total number of events
     def get_number_of_events(self):
         return len(self.events_dict)
+
