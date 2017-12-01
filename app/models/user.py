@@ -9,8 +9,8 @@ class User(UserMixin):
     """
 
     def __init__(self, username, email, password):
-        self.id = username
-        self.email = email
+        self.username = username
+        self.id = email
         self.pw_hash = generate_password_hash(password)
         self.events_dict = {}
 
