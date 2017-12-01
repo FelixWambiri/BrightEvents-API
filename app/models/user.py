@@ -7,11 +7,10 @@ class User(UserMixin):
     With all their attributes and methods
     """
 
-    def __init__(self, username, email, password, confirm_password):
+    def __init__(self, username, email, password):
         self.id = username
         self.email = email
         self.password = password
-        self.confirm_password = confirm_password
         self.events_dict = {}
 
     # Create an event whereby name is key
