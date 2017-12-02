@@ -61,8 +61,9 @@ def login():
     password_f = data['password']
     if email is None or password_f is None:
         abort(400)
-    if user_accounts.get_specific_user(email):
-        if user_accounts.get_specific_user(email).compare_hashed_password(password_f):
+    user = user_accounts.get_specific_user(email)
+    if user:
+        if user.compare_hashed_password(password_f):
             login_user(user_accounts.get_specific_user(email))
             response = jsonify({"Success": "You were successfully logged in"})
             response.status_code = 200  # Ok
@@ -109,6 +110,7 @@ def create_events():
                             "event": {"name": event.name, "category": event.category, "location": event.location,
                                       "owner": owner, "description": event.description}})
         response.status_code = 201  # Created
+        return response
     except KeyError:
         return jsonify({"Warning": 'The event already exists'})
 
@@ -138,12 +140,13 @@ def update_events(event_name):
         return response
 
 
-# Delete an event
+# Delete an event from both the personal events list and the public events list"
 @app.route('/api/v1/events/<string:event_name>', methods=['DELETE'])
 @login_required
 def delete_events(event_name):
     try:
         current_user.delete_event(event_name)
+        user_accounts.delete_an_individuals_events(event_name)
         response = jsonify({"Success": "Event deleted successfully"})
         response.status_code = 204
         return response
@@ -175,17 +178,12 @@ def get_all_events():
 @login_required
 def rsvp_event(event_name):
     event_dict = user_accounts.events
-    if len(event_dict) > 0:
-        event = event_dict.get(event_name)
-        event.add_attendants(current_user)
-        for attendee in event.event_attendees:
-            response = jsonify({'success': 'You have rsvp into an event successfully',
-                                "attendant": {"name": attendee.id, "email": attendee.email}})
-            response.status_code = 200
-            return response
+    event = event_dict.get(event_name)
+    event.add_attendants(current_user)
+    response = jsonify({'success': 'You have rsvp into an event successfully'})
 
-    else:
-        return jsonify({"Info": "No one has rsvp to your event"})
+    response.status_code = 200
+    return response
 
 
 if __name__ == '__main__':
