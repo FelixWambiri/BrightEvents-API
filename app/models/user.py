@@ -1,4 +1,5 @@
 from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 class User(UserMixin):
@@ -7,12 +8,15 @@ class User(UserMixin):
     With all their attributes and methods
     """
 
-    def __init__(self, username, email, password, confirm_password):
-        self.id = username
-        self.email = email
-        self.password = password
-        self.confirm_password = confirm_password
+    def __init__(self, username, email, password):
+        self.username = username
+        self.id = email
+        self.pw_hash = generate_password_hash(password)
         self.events_dict = {}
+
+    # Method to verify the hashed password
+    def compare_hashed_password(self, password):
+        return check_password_hash(self.pw_hash, password)
 
     # Create an event whereby name is key
     # But first check if the event already exists
@@ -24,9 +28,13 @@ class User(UserMixin):
 
     # Update an event but first check if the user wants to update that field
     # If event field is empty previous data is retained
-    def update_event(self, name, category, location, owner, description):
+    def update_event(self, name, new_name, category, location, owner, description):
         event = self.events_dict[name]
-        print('category is ...', type(category))
+        event = self.events_dict[name]
+        if new_name != '':
+            event.name = new_name
+            self.events_dict[new_name] = event
+            del self.events_dict[name]
         if category != '':
             event.category = category
 
@@ -49,9 +57,9 @@ class User(UserMixin):
             return self.events_dict.pop(name)
 
     # This method returns a specific event
-    def get_specific_event(self, event):
-        if event.name in self.events_dict:
-            return self.events_dict[event.name]
+    def get_specific_event(self, event_name):
+        if event_name in self.events_dict:
+            return self.events_dict[event_name]
         else:
             raise KeyError("The event does not exist")
 
