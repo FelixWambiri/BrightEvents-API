@@ -108,6 +108,15 @@ class TestUser(unittest.TestCase):
         self.user.create_event(self.event3)
         self.assertEqual(3, self.user.get_number_of_events())
 
+    # Test that user can reset their password
+    def test_that_user_can_reset_password(self):
+        # Test initial password
+        self.assertTrue(self.user.compare_hashed_password("bootcampertofellow"))
+
+        # Test that password has been reset
+        self.user.user_reset_password("Blaze")
+        self.assertFalse(self.user.compare_hashed_password("bootcampertofellow"))
+
 
 if __name__ == '__main__':
     unittest.main()
