@@ -186,5 +186,22 @@ def rsvp_event(event_name):
     return response
 
 
+# Route to reset password
+@app.route('/api/auth/reset_password', methods=['POST'])
+@login_required
+def reset_password():
+    data = request.get_json()
+    previous_password = data['previous_password']
+    new_password = data['new_password']
+
+    if current_user.compare_hashed_password(previous_password):
+        current_user.user_reset_password(new_password)
+        response = jsonify({'success': 'The password has been updated successfully'})
+        response.status_code = 200
+        return response
+    else:
+        return jsonify({'warning': 'Please try to remember you previous password'})
+
+
 if __name__ == '__main__':
     app.run()
