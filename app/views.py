@@ -119,13 +119,15 @@ def create_events():
 @login_required
 def update_events(event_name):
     data = request.get_json()
+    new_name = data['new_name']
     category = data['category']
     location = data['location']
     owner = data['owner']
     description = data['description']
 
     try:
-        event = current_user.update_event(event_name, category=category, location=location, owner=owner,
+        event = current_user.update_event(event_name, new_name=new_name, category=category, location=location,
+                                          owner=owner,
                                           description=description)
         return jsonify({'success': 'The event has been updated successfully',
                         "event": {"name": event.name, "category": event.category, "location": event.location,
@@ -147,7 +149,7 @@ def delete_events(event_name):
         return response
     except KeyError:
         response = jsonify({'warning': 'The event does not exist'})
-        response.status_code = 404 # Not found
+        response.status_code = 404  # Not found
         return response
 
         # Retrieves all events
