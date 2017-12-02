@@ -66,3 +66,8 @@ class User(UserMixin):
     # Method to return the total number of events
     def get_number_of_events(self):
         return len(self.events_dict)
+
+    # Method for User to change password
+    def user_reset_password(self, new_pass):
+        pass_hash = generate_password_hash(new_pass)
+        self.pw_hash = pass_hash
