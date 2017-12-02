@@ -61,8 +61,9 @@ def login():
     password_f = data['password']
     if email is None or password_f is None:
         abort(400)
-    if user_accounts.get_specific_user(email):
-        if user_accounts.get_specific_user(email).compare_hashed_password(password_f):
+    user = user_accounts.get_specific_user(email)
+    if user:
+        if user.compare_hashed_password(password_f):
             login_user(user_accounts.get_specific_user(email))
             response = jsonify({"Success": "You were successfully logged in"})
             response.status_code = 200  # Ok
@@ -177,17 +178,12 @@ def get_all_events():
 @login_required
 def rsvp_event(event_name):
     event_dict = user_accounts.events
-    if len(event_dict) > 0:
-        event = event_dict.get(event_name)
-        event.add_attendants(current_user)
-        for attendee in event.event_attendees:
-            response = jsonify({'success': 'You have rsvp into an event successfully',
-                                "attendant": {"name": attendee.id, "email": attendee.email}})
-            response.status_code = 200
-            return response
+    event = event_dict.get(event_name)
+    event.add_attendants(current_user)
+    response = jsonify({'success': 'You have rsvp into an event successfully'})
 
-    else:
-        return jsonify({"Info": "No one has rsvp to your event"})
+    response.status_code = 200
+    return response
 
 
 if __name__ == '__main__':
