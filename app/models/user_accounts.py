@@ -17,14 +17,14 @@ class UserAccounts:
             return self.users.update({user.id: user})
 
     # Return a specific user
-    def get_specific_user(self, username):
-        if username in self.users:
-            return self.users[username]
+    def get_specific_user(self, email):
+        if email in self.users:
+            return self.users[email]
 
     # Delete a user
-    def delete_user(self, username):
+    def delete_user(self, email):
         try:
-            self.users.pop(username)
+            self.users.pop(email)
         except KeyError:
             print("The User does not exist")
             raise
