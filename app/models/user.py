@@ -28,9 +28,10 @@ class User(UserMixin):
 
     # Update an event but first check if the user wants to update that field
     # If event field is empty previous data is retained
-    def update_event(self, name, category, location, owner, description):
+    def update_event(self, name, new_name, category, location, owner, description):
         event = self.events_dict[name]
-        print('category is ...', type(category))
+        if name != '':
+            event.name = new_name
         if category != '':
             event.category = category
 
@@ -53,9 +54,9 @@ class User(UserMixin):
             return self.events_dict.pop(name)
 
     # This method returns a specific event
-    def get_specific_event(self, event):
-        if event.name in self.events_dict:
-            return self.events_dict[event.name]
+    def get_specific_event(self, event_name):
+        if event_name in self.events_dict:
+            return self.events_dict[event_name]
         else:
             raise KeyError("The event does not exist")
 
