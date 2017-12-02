@@ -43,7 +43,7 @@ def register():
     password = data['password']
     if username is None or email is None or password is None:
         abort(400)
-    if user_accounts.get_specific_user(username):
+    if user_accounts.get_specific_user(email):
         return jsonify({"Warning": "User already exists, choose another username"})
     else:
         user = User(username=username, email=email, password=password)

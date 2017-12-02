@@ -30,8 +30,11 @@ class User(UserMixin):
     # If event field is empty previous data is retained
     def update_event(self, name, new_name, category, location, owner, description):
         event = self.events_dict[name]
-        if name != '':
+        event = self.events_dict[name]
+        if new_name != '':
             event.name = new_name
+            self.events_dict[new_name] = event
+            del self.events_dict[name]
         if category != '':
             event.category = category
 
@@ -63,4 +66,3 @@ class User(UserMixin):
     # Method to return the total number of events
     def get_number_of_events(self):
         return len(self.events_dict)
-
