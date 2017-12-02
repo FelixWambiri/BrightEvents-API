@@ -29,64 +29,68 @@ user_accounts = UserAccounts()
 
 # Callback method to reload the user object
 @login_manager.user_loader
-def load_user(username):
-    return user_accounts.get_specific_user(username)
+def load_user(email):
+    return user_accounts.get_specific_user(email)
 
 
 # Registration route
 # All fields must be filled
-@app.route('/api/v1/register', methods=['POST'])
+@app.route('/api/v1/auth/register', methods=['POST'])
 def register():
     data = request.get_json()
     username = data['username']
     email = data['email']
     password = data['password']
-    confirm_password = data['confirm_password']
-    if username is None or email is None or password is None or confirm_password is None:
+    if username is None or email is None or password is None:
         abort(400)
-    if user_accounts.get_specific_user(username):
-        return jsonify({"msg": "User already exists, choose another username"})
+    if user_accounts.get_specific_user(email):
+        return jsonify({"Warning": "User already exists, choose another username"})
     else:
-        user = User(username=username, email=email, password=password, confirm_password=confirm_password)
+        user = User(username=username, email=email, password=password)
         user_accounts.create_user(user)
-        response = jsonify({"msg": "You have been registered successfully and can proceed to login"})
-        response.status_code = 201
+        response = jsonify({"Success": "You have been registered successfully and can proceed to login"})
+        response.status_code = 201  # Created
         return response
 
 
 # Login route
-@app.route('/api/v1/login', methods=['POST'])
+@app.route('/api/v1/auth/login', methods=['POST'])
 def login():
     data = request.get_json()
-    username = data['username']
+    email = data['email']
     password_f = data['password']
-    if username is None or password_f is None:
+    if email is None or password_f is None:
         abort(400)
-    if user_accounts.get_specific_user(username):
-        if password_f == user_accounts.get_specific_user(username).password:
-            login_user(user_accounts.get_specific_user(username))
+    if user_accounts.get_specific_user(email):
+        if user_accounts.get_specific_user(email).compare_hashed_password(password_f):
+            login_user(user_accounts.get_specific_user(email))
             response = jsonify({"Success": "You were successfully logged in"})
-            response.status_code = 200
+            response.status_code = 200  # Ok
             return response
 
         else:
-            return jsonify({"Warning": 'Invalid Password'})
+            response = jsonify({"Warning": 'Invalid Credentials'})
+            response.status_code = 401  # Unauthorized
+            return response
 
     else:
-        return jsonify({"Warning": 'Invalid Username, The Username does not exist'})
+        response = jsonify({"Warning": 'Invalid Credentials'})
+        response.status_code = 401  # Unauthorized
+        return response
 
 
 # Logout route
-@app.route('/api/v1/logout')
+@app.route('/api/v1/auth/logout')
 @login_required
 def logout():
     logout_user()
-    return jsonify({"success": 'You are logged out'})
+    response = jsonify({"success": 'You are logged out'})
+    response.status_code = 200  # Ok
 
 
 # User crud operations
 # Create an event
-@app.route('/api/v1/create_events', methods=['POST'])
+@app.route('/api/v1/events', methods=['POST'])
 @login_required
 def create_events():
     data = request.get_json()
@@ -101,32 +105,87 @@ def create_events():
     try:
         current_user.create_event(event)
         user_accounts.add_all_individual_events(current_user)
-        return jsonify({"Success": "Event created successfully",
-                        "event": {"name": event.name, "category": event.category, "location": event.location,
-                                  "owner": owner, "description": event.description}})
+        response = jsonify({"Success": "Event created successfully",
+                            "event": {"name": event.name, "category": event.category, "location": event.location,
+                                      "owner": owner, "description": event.description}})
+        response.status_code = 201  # Created
     except KeyError:
         return jsonify({"Warning": 'The event already exists'})
 
 
 # Update an Event
 # Name field should not be editable
-@app.route('/api/v1/update_events/<string:event_name>', methods=['PUT'])
+@app.route('/api/v1/events/<string:event_name>', methods=['PUT'])
 @login_required
 def update_events(event_name):
     data = request.get_json()
+    new_name = data['new_name']
     category = data['category']
     location = data['location']
     owner = data['owner']
     description = data['description']
 
     try:
-        event = current_user.update_event(event_name, category=category, location=location, owner=owner,
+        event = current_user.update_event(event_name, new_name=new_name, category=category, location=location,
+                                          owner=owner,
                                           description=description)
         return jsonify({'success': 'The event has been updated successfully',
                         "event": {"name": event.name, "category": event.category, "location": event.location,
                                   "owner": owner, "description": event.description}})
     except KeyError:
-        return jsonify({'warning': 'The event does not exist'})
+        response = jsonify({'warning': 'The event does not exist'})
+        response.status_code = 404  # Not found
+        return response
+
+
+# Delete an event
+@app.route('/api/v1/events/<string:event_name>', methods=['DELETE'])
+@login_required
+def delete_events(event_name):
+    try:
+        current_user.delete_event(event_name)
+        response = jsonify({"Success": "Event deleted successfully"})
+        response.status_code = 204
+        return response
+    except KeyError:
+        response = jsonify({'warning': 'The event does not exist'})
+        response.status_code = 404  # Not found
+        return response
+
+        # Retrieves all events
+
+
+# Route to display all events
+@app.route('/api/v1/events', methods=['GET'])
+@login_required
+def get_all_events():
+    if current_user.get_number_of_events() > 0:
+        # list to store all events
+        events = []
+        for event in current_user.events_dict.values():
+            # add events into list by  appending them
+            events.append({'name': event.name, "category": event.category, "location": event.location})
+        return jsonify({'Events': events})
+    else:
+        return jsonify({'Info': "No event created so far"})
+
+
+# Route to rsvp to an event
+@app.route('/api/v1/event/<event_name>/rsvp', methods=['POST'])
+@login_required
+def rsvp_event(event_name):
+    event_dict = user_accounts.events
+    if len(event_dict) > 0:
+        event = event_dict.get(event_name)
+        event.add_attendants(current_user)
+        for attendee in event.event_attendees:
+            response = jsonify({'success': 'You have rsvp into an event successfully',
+                                "attendant": {"name": attendee.id, "email": attendee.email}})
+            response.status_code = 200
+            return response
+
+    else:
+        return jsonify({"Info": "No one has rsvp to your event"})
 
 
 if __name__ == '__main__':
