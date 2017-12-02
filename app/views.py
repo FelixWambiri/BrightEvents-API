@@ -109,6 +109,7 @@ def create_events():
                             "event": {"name": event.name, "category": event.category, "location": event.location,
                                       "owner": owner, "description": event.description}})
         response.status_code = 201  # Created
+        return response
     except KeyError:
         return jsonify({"Warning": 'The event already exists'})
 
@@ -138,12 +139,13 @@ def update_events(event_name):
         return response
 
 
-# Delete an event
+# Delete an event from both the personal events list and the public events list"
 @app.route('/api/v1/events/<string:event_name>', methods=['DELETE'])
 @login_required
 def delete_events(event_name):
     try:
         current_user.delete_event(event_name)
+        user_accounts.delete_an_individuals_events(event_name)
         response = jsonify({"Success": "Event deleted successfully"})
         response.status_code = 204
         return response
