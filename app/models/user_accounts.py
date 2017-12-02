@@ -38,4 +38,8 @@ class UserAccounts:
     def get_number_of_all_users_events(self):
         return len(self.events)
 
+    #  Method to delete an individuals event from the public events list/page
+    def delete_an_individuals_events(self, event_name):
+        return self.events.pop(event_name)
+
 
