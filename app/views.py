@@ -203,5 +203,6 @@ def reset_password():
         return jsonify({'warning': 'Please try to remember you previous password'})
 
 
+port = 5000
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=port)
