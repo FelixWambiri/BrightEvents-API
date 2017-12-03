@@ -26,6 +26,8 @@ login_manager.login_message_category = "info"
 # User accounts object
 user_accounts = UserAccounts()
 
+port = 5000
+
 
 # Callback method to reload the user object
 @login_manager.user_loader
@@ -204,4 +206,4 @@ def reset_password():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run('', port=port)
