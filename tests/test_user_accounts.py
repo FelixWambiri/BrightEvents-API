@@ -91,21 +91,21 @@ class TestUserAccounts(unittest.TestCase):
     def test_add_all_individual_events_method_works_correctly(self):
         # Add user1 together with their events
         self.user_accounts.create_user(self.user1)
-        self.user_accounts.add_all_individual_events(self.user1)
+        self.user_accounts.add_all_individual_events(None, self.user1)
 
         # Test if events are added
         self.assertEqual(1, len(self.user_accounts.events))
 
         # Add user2 together with their events
         self.user_accounts.create_user(self.user2)
-        self.user_accounts.add_all_individual_events(self.user2)
+        self.user_accounts.add_all_individual_events(None, self.user2)
 
         # Test if events are added
         self.assertEqual(2, len(self.user_accounts.events))
 
         # Add user3 together with their events
         self.user_accounts.create_user(self.user3)
-        self.user_accounts.add_all_individual_events(self.user3)
+        self.user_accounts.add_all_individual_events(None, self.user3)
 
         # Test if events are added
         self.assertEqual(3, len(self.user_accounts.events))
@@ -118,11 +118,11 @@ class TestUserAccounts(unittest.TestCase):
         # Test when two users are added together with their events
         # User One and their events
         self.user_accounts.create_user(self.user2)
-        self.user_accounts.add_all_individual_events(self.user2)
+        self.user_accounts.add_all_individual_events(None, self.user2)
 
         # User Two and their events
         self.user_accounts.create_user(self.user3)
-        self.user_accounts.add_all_individual_events(self.user3)
+        self.user_accounts.add_all_individual_events(None, self.user3)
 
         # Test if events are added
         self.assertEqual(2, len(self.user_accounts.events))
