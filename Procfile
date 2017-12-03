@@ -1,2 +1,2 @@
-web: python run.py runserver 
+web: waitress-serve --threads=10 --port=$PORT run:app
 heroku ps:scale web=1
