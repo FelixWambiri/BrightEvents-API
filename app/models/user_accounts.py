@@ -35,7 +35,7 @@ class UserAccounts:
         if user.id in self.users:
             if previous_event in self.events:
                 del self.events[previous_event]
-                return self.events.update(user.events_dict)
+            return self.events.update(user.events_dict)
 
     # Returns the total number of users events in the events dictionary
     def get_number_of_all_users_events(self):
@@ -44,5 +44,3 @@ class UserAccounts:
     #  Method to delete an individuals event from the public events list/page
     def delete_an_individuals_events(self, event_name):
         return self.events.pop(event_name)
-
-
