@@ -30,9 +30,12 @@ class UserAccounts:
             raise
 
     # Method to add users individual events into the general events dictionary
-    def add_all_individual_events(self, user):
+    # Fix a bug in this method have to delete event because after updating event the original remained
+    def add_all_individual_events(self, previous_event, user):
         if user.id in self.users:
-            return self.events.update(user.events_dict)
+            if previous_event in self.events:
+                del self.events[previous_event]
+                return self.events.update(user.events_dict)
 
     # Returns the total number of users events in the events dictionary
     def get_number_of_all_users_events(self):
