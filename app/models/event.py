@@ -10,11 +10,11 @@ class Event:
         self.location = location
         self.owner = owner
         self.description = description
-        self.event_attendees = []
+        self.event_attendees = {}
 
     # Method to add attendees into the attendants list
-    def add_attendants(self, attendant):
-        return self.event_attendees.append(attendant)
+    def add_attendants(self, attendant_id, attendant_name):
+        return self.event_attendees.update({attendant_name: attendant_id})
 
     # Method to know the number of attendants
     def get_total_attendants(self):
