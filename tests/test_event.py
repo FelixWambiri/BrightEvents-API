@@ -34,19 +34,19 @@ class TestEvent(unittest.TestCase):
 
     # Test that an event attendant is added into the attendants database
     def test_attendant_is_added_to_the_attendants_list(self):
-        self.event.add_attendants(self.attendant)
+        self.event.add_attendants("Fellow1", "fellow1@andela.com")
         self.assertEqual(1, len(self.event.event_attendees))
 
     # Test that multiple attendants can attend one event
     def test_that_multiple_attendants_can_attend_one_event(self):
         # Add 1st attendant
-        self.event.add_attendants(self.attendant)
+        self.event.add_attendants("Fellow1", "fellow1@andela.com")
 
         # Add 2nd attendant
-        self.event.add_attendants(self.attendant1)
+        self.event.add_attendants("Johny", "johny@bravo.com")
 
         # Add 3rd attendant
-        self.event.add_attendants(self.attendant2)
+        self.event.add_attendants("Ricky", "ricky@morty.com")
 
         # Test that three of them are added to attend the event
         self.assertEqual(3, len(self.event.event_attendees))
@@ -57,15 +57,14 @@ class TestEvent(unittest.TestCase):
         self.assertEqual(0, self.event.get_total_attendants())
 
         # Test after adding one attendant
-        self.event.add_attendants(self.attendant)
+        self.event.add_attendants("Fellow1", "fellow1@andela.com")
         self.assertEqual(1, self.event.get_total_attendants())
 
         # Test after adding two attendants
-        self.event.add_attendants(self.attendant1)
-        self.event.add_attendants(self.attendant2)
+        self.event.add_attendants("Johny", "johny@bravo.com")
+        self.event.add_attendants("Ricky", "ricky@morty.com")
         self.assertEqual(3, self.event.get_total_attendants())
 
 
 if __name__ == '__main__':
     unittest.main()
-
