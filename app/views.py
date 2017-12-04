@@ -180,7 +180,7 @@ def get_all_events():
 def rsvp_event(event_name):
     event_dict = user_accounts.events
     event = event_dict.get(event_name)
-    event.add_attendants(current_user)
+    event.add_attendants(current_user.id, current_user.username)
     response = jsonify({'success': 'You have rsvp into an event successfully'})
 
     response.status_code = 200
