@@ -66,4 +66,7 @@ To run such tests just enter the command `nosetests`
 To preview or see the user interfaces copy this link and load it in your preffered browser 
 `https://FelixWambiri.github.io`
 
+##  Link to my Heroku app
+To try out the view just click on the following link `https://bright-events-app.herokuapp.com`
+
 
