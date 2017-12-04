@@ -34,6 +34,8 @@ class User(UserMixin):
         if new_name.strip():
             event.name = new_name
             self.events_dict[new_name] = event
+            if new_name != name:
+                del self.events_dict[name]
         if category.strip():
             event.category = category
 
