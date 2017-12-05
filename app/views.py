@@ -38,11 +38,13 @@ def load_user(email):
 @app.route('/api/v1/auth/register', methods=['POST'])
 def register():
     data = request.get_json()
-    username = data['username']
-    email = data['email']
-    password = data['password']
+    username = data['username'].strip()
+    email = data['email'].strip()
+    password = data['password'].strip()
     if username is None or email is None or password is None:
         abort(400)
+    if len(username) < 5 or len(email) < 5 or len(password) < 5:
+        return jsonify({"Warning": "This fields must be more than 5 characters and not empty spaces"})
     if user_accounts.get_specific_user(email):
         return jsonify({"Warning": "User already exists, choose another username"})
     else:
