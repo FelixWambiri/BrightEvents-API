@@ -97,13 +97,15 @@ def logout():
 @login_required
 def create_events():
     data = request.get_json()
-    name = data['name']
-    category = data['category']
-    location = data['location']
-    owner = data['owner']
-    description = data['description']
+    name = data['name'].strip()
+    category = data['category'].strip()
+    location = data['location'].strip()
+    owner = data['owner'].strip()
+    description = data['description'].strip()
     if name is None or category is None or location is None or owner is None:
         abort(400)
+    if len(name) < 5 or len(category) < 5 or len(location) < 5 or len(owner) < 5:
+        return jsonify({"Warning": "This fields must be more than 5 characters and not empty spaces"})
     event = Event(name=name, category=category, location=location, owner=owner, description=description)
     try:
         current_user.create_event(event)
@@ -195,7 +197,10 @@ def rsvp_event(event_name):
 def reset_password():
     data = request.get_json()
     previous_password = data['previous_password']
-    new_password = data['new_password']
+    new_password = data['new_password'].strip()
+
+    if len(new_password) < 5:
+        return jsonify({"Warning": "This fields must be more than 5 characters and not empty spaces"})
 
     if current_user.compare_hashed_password(previous_password):
         current_user.user_reset_password(new_password)
