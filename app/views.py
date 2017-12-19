@@ -20,7 +20,7 @@ login_manager.init_app(app)
 login_manager.login_view = "/api/v1/login"
 
 # Message flashed for unauthorized attempt to access a protected page
-login_manager.login_message = u"Please Login First to access this page"
+login_manager.login_message = u"Please Login First to access this resource"
 login_manager.login_message_category = "info"
 
 # User accounts object
@@ -109,7 +109,7 @@ def create_events():
     event = Event(name=name, category=category, location=location, owner=owner, description=description)
     try:
         current_user.create_event(event)
-        user_accounts.add_all_individual_events(None,current_user)
+        user_accounts.add_all_individual_events(None, current_user)
         response = jsonify({"Success": "Event created successfully",
                             "event": {"name": event.name, "category": event.category, "location": event.location,
                                       "owner": owner, "description": event.description}})
@@ -160,7 +160,23 @@ def delete_events(event_name):
         response.status_code = 404  # Not found
         return response
 
-        # Retrieves all events
+
+# Retrieves an individual event
+@app.route('/api/v1/events/<event_name>', methods=['GET'])
+@login_required
+def get_an_individual_event(event_name):
+    if current_user.get_number_of_events() > 0:
+
+        try:
+            event = current_user.get_specific_event(event_name)
+            return jsonify({"event": {"name": event.name, "category": event.category, "location": event.location,
+                                      "owner": event.owner, "description": event.description}})
+        except KeyError:
+            response = jsonify({'warning': 'There is no such event'})
+            response.status_code = 404  # Not found
+            return response
+    else:
+        return jsonify({'Info': "No event created so far"})
 
 
 # Route to display all events
