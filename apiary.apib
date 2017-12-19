@@ -1,0 +1,311 @@
+FORMAT: 1A
+HOST: http://polls.apiblueprint.org/
+
+# BrightEvents
+
+BrightEvents API is a rest API that is resource oriented based upon URls.This API uses the standard HTTP response codes and verbs which are well understood by all clients.The type of responses provided in this API are in JSON format.
+
+### Overview
+This defines the resources that compose BrightEvents REST API v1.
+1. Authentication
+2. Parameters
+3. HTTP status codes
+4. HTTP verbs
+
+## CORE RESOURCES
+1. Create Event
+2. View Event
+3. Update Event
+4. Delete Event
+5. View all events
+6. RSVP an Event
+
+#### Authentication
+You authenticate your BrightEvents account by providing an email and a password, but first of you need to have first created an account by registering for one.Requests that require authentication will return a `404 Not Found` status code, if a trial is made to access them without first authenticating your account.
+
+##### Registration
+You register by providing some basic information such as a username, an email which has to be unique and a password.
+
+##### Definition
+`POST http://127.0.0.1:5000/api/v1/auth/register`
+
+##### Example Request Body
+```JSON
+{
+"username":"felix",
+"email":"felloh@gmail.com",
+"password":"fellow"
+}
+```
+
+##### Example Response
+```JSON
+{
+"Success": "You have been registered successfully and can proceed to login"
+}
+```
+
+##### Login
+You login into your account by providing your unique email and a password.
+
+##### Definition
+`POST http://127.0.0.1:5000/api/v1/auth/login`
+
+##### Example Request Body
+```JSON
+{
+"email":"felloh@gmail.com",
+"password":"fellow"
+}
+```
+
+##### Example Response
+```JSON
+{
+"Success": "You were successfully logged in"
+}
+```
+#### Parameters
+Most of the methods used in the API require parameters, which are either necessary or optional.
+For POST, PUT, and DELETE requests, parameters not included in the URL should be encoded as JSON with a Content-Type of 'application/json':
+```JSON
+{
+"email":"felloh@gmail.com"
+}
+```
+
+#### HTTP status codes
+The following are some of the commonly used standard HTTP response status codes
+|Code| Status            | Definition                     |
+|----|:-----------------:|-------------------------------:|
+|200 |  Ok               |Everything worked as expected   |
+|201 |  Created          |The request has been fulfilled  |
+|    |                   |and resulted in a new resource  |
+|    |                   |being created                   |
+|204 | No Content        |The server has fulfilled the    |
+|    |                   |request but does not need to    |
+|    |                   |return an entity-body           |
+|401 | Unauthorized      |The request requires user       |
+|    |                   |authentication                  |
+|404 |Not Found          |The server has not found        |
+|    |                   |anything matching the Request-  |
+|    |                   |URI                             |
+
+#### HTTP verbs
+This API uses appropriate HTTP verbs for each action.
+|Verb    | Description                                      |
+|--------|:------------------------------------------------:|
+|`GET`   |Used for retrieving resources                     |
+|`POST`  |Used for creating resources                       |
+|`PUT`   |Used for replacing resources or collections       |
+|`DELETE`|Used for deleting resources                       |
+
+## Create Event
+To create an event you need to provide some information which which will identify the event such as event name,category, location, owner and description.The description parameter is optional while the other parameters are a necessity.Each parameter should be more than five characters and not empty spaces.Each event is identified via its name.
+#### Attributes
+|Name            | Type            | Description                                   |
+|----------------|:----------------|----------------------------------------------:|
+|Name            |String           |This is the name of the event being created    |
+|Category        |String           |Category of the event being created            |
+|Location        |String           |This is the category which event will belong to|
+|Owner           |String           |This is the person or organization hosting the |
+|                |                 |event                                          |
+|Description     |String           |This is any additional information which better|
+|                |                 |describes the event.                           |
+
+##### Definition
+`POST http://127.0.0.1:5000/api/v1/events`
+
+##### Example Request Body
+```JSON
+{
+"name":"Sepetuka",
+"category":"Social",
+"location":"Nairobi",
+"owner":"Bonfire",
+"description":"Commits are  atomic, consistent and contain meaningful messages that are   context specific"
+}
+```
+
+##### Example Response
+```JSON
+{
+"Success": "Event created successfully",
+"event": {
+        "name":"Sepetuka",
+        "category":"Social",
+        "location":"Nairobi",
+        "owner":"Bonfire",
+        "description":"Commits are  atomic, consistent and contain meaningful messages that are   context specific"
+    }
+}
+```
+
+## View Event
+This resource returns an individual evet given the name
+
+#### Attribute
+|Name            | Type            | Description                                   |
+|----------------|:----------------|----------------------------------------------:|
+|Name            |String           |This is the name of the event being retrieved  |
+
+#### Returns
+This resource returns an individual event if a valid name was given.Raises an `404 Not Found`error if otherwise and returns a message that no such event exists.
+
+##### Definition
+`GET http://127.0.0.1:5000/api/v1/events/Sepetuka`
+
+##### Example Response 
+```JSON
+{
+"event": {
+        "name":"Sepetuka",
+        "category":"Social",
+        "location":"Nairobi",
+        "owner":"Bonfire",
+        "description":"Commits are  atomic, consistent and contain meaningful messages that are   context specific"
+    }
+}
+```
+
+##### Example Response when event doesnt exist
+```JSON
+{
+"Warning":"There is no such event""
+}
+```
+
+## Update Event
+This request updates the specified event through the values of the parameter passed.You specify an event to update through its name Any attributes or parameters not provided will be left unchanged.
+This request accepts name, category, location, owner and description as parameters and this parameter are optional as it is not a must for all of the to be updated.
+#### Attributes
+|Name            | Type            | Description                                         |
+|----------------|:----------------|----------------------------------------------------:|
+|Name            |String           |This is the name of the event you want to update     |  
+|Name            |String           |New name to replace previous one                     |
+|Category        |String           |New category to replace previous one                 |
+|Location        |String           |New location to replace previous one                 |
+|Owner           |String           |New Event organiser to replace previous one          |
+|Description     |String           |New or additional description to replace previous one| 
+
+#### Returns
+Returns the updated event object if the update was successful and raises and `404 Not Found` error if the event being updated does not exist.
+
+##### Definition
+`PUT http://127.0.0.1:5000/api/v1/events/Sepetuka`
+
+##### Example Request Body - When updating all fields
+```JSON
+{
+"name":"Bootcamp",
+"category":"Learning",
+"location":"Uganda",
+"owner":"Andela",
+"description":"A learning experience like no other"
+}
+```
+
+##### Example Response - When all fields have been updated
+```JSON
+{
+    "event": {
+        "category": "Learning",
+        "description": "A learning experience like no other",
+        "location": "Uganda",
+        "name": "Bootcamp",
+        "owner": "Andela"
+    },
+    "success": "The event has been updated successfully"
+}
+```
+
+##### Example Request Body - When some fields have been ommitted
+```JSON
+{
+"name":"",
+"category":"",
+"location":"Mombasa",
+"owner":"Andela UK",
+"description":""
+}
+```
+
+##### Example Response - When some fields have been ommitted
+```JSON
+{
+    "event": {
+        "category": "Learning",
+        "description": "A learning experience like no other",
+        "location": "Mombasa",
+        "name": "Bootcamp",
+        "owner": "Andela UK"
+    },
+    "success": "The event has been updated successfully"
+}
+```
+
+## Delete Event
+You can delete an event via the API by passing the name of the event you want delete as an identifier.When you delete an event, it is not only deleted from your own account but also from the list of all events
+
+#### Attribute
+|Name            | Type            | Description                                   |
+|----------------|:----------------|----------------------------------------------:|
+|Name            |String           |This is the name of the event being deleted    |
+
+#### Returns
+Returns a `204 No Content` status code on successful deletion of an event and raises and error and passes a message if the event does not exist or if it has already been deleted.
+
+##### Definition
+`DELETE http://127.0.0.1:5000/api/v1/events/Bootcamp`
+
+##### Example Response 
+`204 No Content`
+
+## Viewing all events
+Returns a list of all the events
+
+##### Definition
+`GET http://127.0.0.1:5000/api/v1/events`
+
+#### Returns
+It returns a list of all the events that have been created displaying just some basic inormation such as name, category and location.
+If there are no events created a message will be returned saying no events have been created that far.This request should not raise an error.
+
+##### Example Response
+```JSON
+{
+    "Events": [
+        {
+            "category": "Social",
+            "location": "Nairobi",
+            "name": "Sepetuka"
+        },
+        {
+            "category": "Social",
+            "location": "Nairobi",
+            "name": "Bootcamp"
+        }
+    ]
+}
+```
+
+## RSVP an event
+This request allows you to RSVP into an event.You just need to pass the name of the event which you want to RSVP into.
+
+#### Attribute
+|Name            | Type            | Description                                   |
+|----------------|:----------------|----------------------------------------------:|
+|Name            |String           |This is the name of the event being RSVP into  |
+
+#### Returns
+Returns a message informing you of a successful RSVP into an event
+
+##### Definition
+`POST http://127.0.0.1:5000/api/v1/event/Sepetuka/rsvp`
+
+##### Example Response
+```JSON
+{
+    "success": "You have rsvp into an event successfully"
+}
+```
