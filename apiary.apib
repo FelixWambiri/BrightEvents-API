@@ -80,26 +80,20 @@ For POST, PUT, and DELETE requests, parameters not included in the URL should be
 <a id='http-status-codes'></a>
 #### HTTP status codes
 The following are some of the commonly used standard HTTP response status codes
-|Code| Status            | Definition                     |
-|----|:-----------------:|-------------------------------:|
-|200 |  Ok               |Everything worked as expected   |
-|201 |  Created          |The request has been fulfilled  |
-|    |                   |and resulted in a new resource  |
-|    |                   |being created                   |
-|204 | No Content        |The server has fulfilled the    |
-|    |                   |request but does not need to    |
-|    |                   |return an entity-body           |
-|401 | Unauthorized      |The request requires user       |
-|    |                   |authentication                  |
-|404 |Not Found          |The server has not found        |
-|    |                   |anything matching the Request-  |
-|    |                   |URI                             |
+|Code| Status            | Definition                                                                    |
+|----|:----------------- |:------------------------------------------------------------------------------|
+|200 |Ok                 |Everything worked as expected                                                  |
+|201 |Created            |The request has been fulfilled and resulted in a new resource being created    |
+|204 |No Content         |The server has fulfilled the request but does not need to return an entity-body|
+|401 |Unauthorized       |The request requires user authentication                                       |
+|404 |Not Found          |The server has not found anything matching the Request-URI                     |
+
 
 <a id='http-verbs'></a>
 #### HTTP verbs
 This API uses appropriate HTTP verbs for each action.
 |Verb    | Description                                      |
-|--------|:------------------------------------------------:|
+|--------|:-------------------------------------------------|
 |`GET`   |Used for retrieving resources                     |
 |`POST`  |Used for creating resources                       |
 |`PUT`   |Used for replacing resources or collections       |
@@ -110,7 +104,7 @@ This API uses appropriate HTTP verbs for each action.
 To create an event you need to provide some information which which will identify the event such as event name,category, location, owner and description.The description parameter is optional while the other parameters are a necessity.Each parameter should be more than five characters and not empty spaces.Each event is identified via its name.
 #### Attributes
 |Name            | Type            | Description                                   |
-|----------------|:----------------|----------------------------------------------:|
+|----------------|:----------------|:----------------------------------------------|
 |Name            |String           |This is the name of the event being created    |
 |Category        |String           |Category of the event being created            |
 |Location        |String           |This is the category which event will belong to|
@@ -153,7 +147,7 @@ This resource returns an individual evet given the name
 
 #### Attribute
 |Name            | Type            | Description                                   |
-|----------------|:----------------|----------------------------------------------:|
+|----------------|:----------------|:----------------------------------------------|
 |Name            |String           |This is the name of the event being retrieved  |
 
 #### Returns
@@ -188,7 +182,7 @@ This request updates the specified event through the values of the parameter pas
 This request accepts name, category, location, owner and description as parameters and this parameter are optional as it is not a must for all of the to be updated.
 #### Attributes
 |Name            | Type            | Description                                         |
-|----------------|:----------------|----------------------------------------------------:|
+|----------------|:----------------|:----------------------------------------------------|
 |Name            |String           |This is the name of the event you want to update     |  
 |Name            |String           |New name to replace previous one                     |
 |Category        |String           |New category to replace previous one                 |
@@ -258,7 +252,7 @@ You can delete an event via the API by passing the name of the event you want de
 
 #### Attribute
 |Name            | Type            | Description                                   |
-|----------------|:----------------|----------------------------------------------:|
+|----------------|:----------------|:----------------------------------------------|
 |Name            |String           |This is the name of the event being deleted    |
 
 #### Returns
@@ -305,7 +299,7 @@ This request allows you to RSVP into an event.You just need to pass the name of 
 
 #### Attribute
 |Name            | Type            | Description                                   |
-|----------------|:----------------|----------------------------------------------:|
+|----------------|:----------------|:----------------------------------------------|
 |Name            |String           |This is the name of the event being RSVP into  |
 
 #### Returns
