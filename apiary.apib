@@ -7,18 +7,18 @@ BrightEvents API is a rest API that is resource oriented based upon URls.This AP
 
 ### Overview
 This defines the resources that compose BrightEvents REST API v1.
-1. Authentication
-2. Parameters
-3. HTTP status codes
-4. HTTP verbs
+1. Authentication(#authentication)
+2. Parameters(#parameters)
+3. HTTP status codes(#http-status-codes)
+4. HTTP verbs(#http-verbs)
 
 ## CORE RESOURCES
-1. Create Event
-2. View Event
-3. Update Event
-4. Delete Event
-5. View all events
-6. RSVP an Event
+1. Create Event(#create-event)
+2. View Event(#view-event)
+3. Update Event(#update-event)
+4. Delete Event(#delete-event)
+5. View all events(#view-all-events)
+6. RSVP an Event(#rsvp-an-event)
 
 #### Authentication
 You authenticate your BrightEvents account by providing an email and a password, but first of you need to have first created an account by registering for one.Requests that require authentication will return a `404 Not Found` status code, if a trial is made to access them without first authenticating your account.
@@ -261,7 +261,7 @@ Returns a `204 No Content` status code on successful deletion of an event and ra
 ##### Example Response 
 `204 No Content`
 
-## Viewing all events
+## Viewing All Events
 Returns a list of all the events
 
 ##### Definition
@@ -289,7 +289,7 @@ If there are no events created a message will be returned saying no events have 
 }
 ```
 
-## RSVP an event
+## RSVP An Event
 This request allows you to RSVP into an event.You just need to pass the name of the event which you want to RSVP into.
 
 #### Attribute
