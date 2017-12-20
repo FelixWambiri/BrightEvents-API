@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, abort
+from flask import Flask, request, jsonify, abort, render_template
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
 from app.models.event import Event
@@ -31,6 +31,13 @@ user_accounts = UserAccounts()
 @login_manager.user_loader
 def load_user(email):
     return user_accounts.get_specific_user(email)
+
+
+# Root endpoint
+# THis is the Root endpoint that is going to display the documentation
+@app.route('/', methods=['GET'])
+def index():
+    return render_template('documentation.html')
 
 
 # Registration route
