@@ -26,6 +26,20 @@ You authenticate your BrightEvents account by providing an email and a password,
 
 ##### Registration
 You register by providing some basic information such as a username, an email which has to be unique and a password.
+#### Attributes
+|Name            |  Description                                                             |
+|----------------|:-------------------------------------------------------------------------|
+|Username        |This is your preferred username and can be comprised of:                  |
+|                |-Both Upercase and Lowercase letter                                       |
+|                |-An underscore, but no other special characters                           |
+|                |**Contrary** to this you will get an error message asking for valid inputs|
+|Email           |This is your email and it should follow the regular email pattern         |
+|                |**Contrary** to this you will get an error message asking for valid inputs|
+|Password        |This isyour unique and secret password and should be comprised of:        |
+|                |-At least 1 letter between [a-z] and 1 letter between [A-Z]               |
+|                |-At least 1 number between [0-9]                                          |
+|                |-At least 1 character from [$#@]                                          |
+|                |**Contrary** to this you will get an error message asking for valid inputs|
 
 ##### Definition
 `POST http://127.0.0.1:5000/api/v1/auth/register`
@@ -67,6 +81,19 @@ You login into your account by providing your unique email and a password.
 }
 ```
 
+##### Logout
+To log out of your account you just need to make a post request and the API will log you out with a message confirming your successful logout
+
+##### Definition
+`POST http://127.0.0.1:5000/api/v1/auth/logout`
+
+##### Example Response
+```JSON
+{
+"success": "You are logged out"
+}
+```
+
 <a id='parameters'></a>
 #### Parameters
 Most of the methods used in the API require parameters, which are either necessary or optional.
@@ -103,15 +130,19 @@ This API uses appropriate HTTP verbs for each action.
 ## Create Event
 To create an event you need to provide some information which which will identify the event such as event name,category, location, owner and description.The description parameter is optional while the other parameters are a necessity.Each parameter should be more than five characters and not empty spaces.Each event is identified via its name.
 #### Attributes
-|Name            | Type            | Description                                   |
-|----------------|:----------------|:----------------------------------------------|
-|Name            |String           |This is the name of the event being created    |
-|Category        |String           |Category of the event being created            |
-|Location        |String           |This is the category which event will belong to|
-|Owner           |String           |This is the person or organization hosting the |
-|                |                 |event                                          |
-|Description     |String           |This is any additional information which better|
-|                |                 |describes the event.                           |
+|Name            | Type            | Description                                             |
+|----------------|:----------------|:--------------------------------------------------------|
+|Name            |String           |This is the name of the event being created and can be:  |
+|                |                 |-Both Upercase and Lowercase letter                      |
+|                |                 |-An underscore, but no other special characters          |
+|                |**Contrary** to this you will get an error message asking for valid inputs |
+|Category        |String           |Category of the event being created                      |
+|Location        |String           |This is the category which event will belong to          |
+|Owner           |String           |This is the person or organization hosting the event     |
+|                |                 |Category,Location and Owner should be strictly alphabetic|
+|                |**Contrary** to this you will get an error message asking for valid inputs |
+|Description     |String           |This is any additional information which better describes|
+|                |                 | the event.                                              |
 
 ##### Definition
 `POST http://127.0.0.1:5000/api/v1/events`
@@ -312,5 +343,12 @@ Returns a message informing you of a successful RSVP into an event
 ```JSON
 {
     "success": "You have rsvp into an event successfully"
+}
+```
+You can only make a reservation to an event once and if you try it twice you get an error message informing you of this
+##### Example Response
+```JSON
+{
+    "warning": "You have already made an RSVP to this event"
 }
 ```
