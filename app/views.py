@@ -1,3 +1,5 @@
+import re
+
 from flask import Flask, request, jsonify, abort, render_template
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
@@ -48,10 +50,32 @@ def register():
     username = data['username'].strip()
     email = data['email'].strip()
     password = data['password'].strip()
+
+    # Validate these fields against being empty
     if username is None or email is None or password is None:
         abort(400)
+
+    # Validate the length of these fields to be more than five characters
     if len(username) < 5 or len(email) < 5 or len(password) < 5:
         return jsonify({"Warning": "This fields must be more than 5 characters and not empty spaces"})
+
+    # Validate the username against special characters and spaces
+    if not re.match("^[a-zA-Z0-9_]*$", username):
+        return jsonify({
+            "Warning": "Invalid username.The username can contain letters, digits and underscore but no special"
+                       " characters or space"})
+
+    # Validate the email to be properly formatted
+    if not re.match(r"([\w\.-]+)@([\w\.-]+)(\.[\w\.]+$)", email):
+        return jsonify({"Warning": "Please enter a valid email"})
+
+    # Validate the password to comprised of certain characters to make it more stronger and secure
+    if not re.search("[a-z]", password) or not re.search("[0-9]", password) or not re.search("[A-Z]",
+                                                                                             password) or not re.search(
+        "[$#@]", password):
+        return jsonify({
+            "Warning": "Invalid Password.The password must contain at least one lowercase character,one digit,"
+                       "one upper case character and one special character"})
     if user_accounts.get_specific_user(email):
         return jsonify({"Warning": "User already exists, choose another username"})
     else:
@@ -90,12 +114,13 @@ def login():
 
 
 # Logout route
-@app.route('/api/v1/auth/logout')
+@app.route('/api/v1/auth/logout', methods=['POST'])
 @login_required
 def logout():
     logout_user()
     response = jsonify({"success": 'You are logged out'})
     response.status_code = 200  # Ok
+    return response
 
 
 # User crud operations
@@ -109,10 +134,24 @@ def create_events():
     location = data['location'].strip()
     owner = data['owner'].strip()
     description = data['description'].strip()
+
+    # Validate these fields against being empty
     if name is None or category is None or location is None or owner is None:
         abort(400)
+
+    # Validate the length of these fields to be more than five characters
     if len(name) < 5 or len(category) < 5 or len(location) < 5 or len(owner) < 5:
         return jsonify({"Warning": "This fields must be more than 5 characters and not empty spaces"})
+
+    # Validate the name against special characters and spaces
+    if not re.match("^[a-zA-Z0-9_]*$", name):
+        return jsonify({
+            "Warning": "Invalid username.The username can contain letters, digits and underscore but no special"
+                       " characters or space"})
+
+    # Validate the category, location and owner fields to be comprised of only alphabetic characters
+    if not category.isalpha() or not location.isalpha() or not owner.isalpha():
+        return jsonify({"Warning": "Please enter a valid input"})
     event = Event(name=name, category=category, location=location, owner=owner, description=description)
     try:
         current_user.create_event(event)
@@ -207,11 +246,26 @@ def get_all_events():
 def rsvp_event(event_name):
     event_dict = user_accounts.events
     event = event_dict.get(event_name)
-    event.add_attendants(current_user.id, current_user.username)
-    response = jsonify({'success': 'You have rsvp into an event successfully'})
+    if current_user.username not in event.event_attendees:
+        event.add_attendants(current_user.id, current_user.username)
+        response = jsonify({'success': 'You have rsvp into an event successfully'})
+        response.status_code = 200
+        return response
+    else:
+        return jsonify({'warning': 'You have already made an RSVP to this event'})
 
-    response.status_code = 200
-    return response
+
+# Endpoint to see all those attending a certain event
+@app.route('/api/v1/event/<event_name>/rsvp', methods=['GET'])
+@login_required
+def view_events_attendants(event_name):
+    event_dict = user_accounts.events
+    event = event_dict.get(event_name)
+    if event.get_total_attendants() > 0:
+        for name, email in event.event_attendees.items():
+            return jsonify({"attendants name": name, "attendants email": email})
+    else:
+        return jsonify({'Info': 'Currently no one has RSVP to attend your Event'})
 
 
 # Route to reset password
