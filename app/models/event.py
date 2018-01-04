@@ -1,4 +1,7 @@
-class Event:
+from app.views import db
+
+
+class Event(db.Model):
     """
     This class is the blueprint for creating an event
     It avails the attributes required for an event
@@ -10,14 +13,16 @@ class Event:
         self.location = location
         self.owner = owner
         self.description = description
-        self.event_attendees = {}
 
-    # Method to add attendees into the attendants list
-    def add_attendants(self, attendant_id, attendant_name):
-        return self.event_attendees.update({attendant_name: attendant_id})
-
-    # Method to know the number of attendants
-    def get_total_attendants(self):
-        return len(self.event_attendees)
-
+    """
+       Create an Events table
+       """
+    __tablename__ = 'events'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(60), unique=True, nullable=False)
+    category = db.Column(db.String(60), nullable=False)
+    location = db.Column(db.String(60), nullable=False)
+    owner = db.Column(db.String(60), nullable=False)
+    description = db.Column(db.String(200), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
