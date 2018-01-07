@@ -29,6 +29,10 @@ class Event(db.Model):
         self.description = description
         self.user_id = user_id
 
+    # Return a printable representation of Event class object
+    def __repr__(self):
+        return '<Event %r>' % self.name
+
 
 class Rsvp(db.Model):
     """
@@ -52,4 +56,3 @@ class Rsvp(db.Model):
     # Method to know the number of attendants
     def get_total_attendants(self):
         return db.session.query(func.count(Rsvp.id))
-        
