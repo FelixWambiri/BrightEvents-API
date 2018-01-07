@@ -1,3 +1,11 @@
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
+
+from app.init_db import db
+from app.models.event import Event
+from app.models.user import User
+
+
 class UserAccounts:
     """
     Blue print for creating and managing users
@@ -5,42 +13,35 @@ class UserAccounts:
     It will be responsible for displaying all events
     """
 
-    def __init__(self):
-        self.users = {}
-        self.events = {}
-
     # Add a new user into the database
     def create_user(self, user):
-        if user.id in self.users:
-            raise KeyError("There exists a user with that name. Please use another name")
+        user_f = User.query.filter_by(email=user.email).first()
+        if user_f:
+            raise IntegrityError("There exists a user with that email. Please use another email")
         else:
-            return self.users.update({user.id: user})
+            db.session.add(user_f)
+            db.commit()
+            return True
 
     # Return a specific user
     def get_specific_user(self, email):
-        if email in self.users:
-            return self.users[email]
+        return User.query.filter_by(email=email).first()
 
     # Delete a user
     def delete_user(self, email):
-        try:
-            self.users.pop(email)
-        except KeyError:
-            print("The User does not exist")
-            raise
-
-    # Method to add users individual events into the general events dictionary
-    # Fix a bug in this method have to delete event because after updating event the original remained
-    def add_all_individual_events(self, previous_event, user):
-        if user.id in self.users:
-            if previous_event in self.events:
-                del self.events[previous_event]
-            return self.events.update(user.events_dict)
+        user = User.query.filter_by(email=email).first()
+        if user:
+            db.session.delete(user)
+            db.session.commit()
+        else:
+            raise IntegrityError("The User does not exist")
 
     # Returns the total number of users events in the events dictionary
     def get_number_of_all_users_events(self):
-        return len(self.events)
+        return db.session.query(func.count(User.id))
 
     #  Method to delete an individuals event from the public events list/page
-    def delete_an_individuals_events(self, event_name):
-        return self.events.pop(event_name)
+    def delete_an_individuals_events(self, name):
+        event = Event.query.filter_by(name=name).first()
+        db.session.delete(event)
+        db.session.commit()
