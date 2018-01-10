@@ -1,6 +1,6 @@
 from flask_login import UserMixin
-from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import NoResultFound
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app.init_db import db
@@ -17,11 +17,11 @@ class User(UserMixin, db.Model):
        """
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(70), index=True, nullable=False)
-    email = db.Column(db.String(70), index=True, unique=True, nullable=False)
-    password = db.Column(db.String(128))
-    events = db.relationship('Event', backref='user')
-    rsvps = db.relationship('RSVP', backref='rsvp')
+    username = db.Column(db.String(64), index=True, nullable=False)
+    email = db.Column(db.String(64), index=True, unique=True, nullable=False)
+    password = db.Column(db.String(100))
+    events = db.relationship('Event', back_populates='user')
+    rsvps = db.relationship('Rsvp', back_populates='user')
 
     def __init__(self, username, email, password):
         self.username = username
@@ -36,7 +36,6 @@ class User(UserMixin, db.Model):
 
         raise AttributeError('password is not a readable attribute.')
 
-    # Method to hash the password
     @password.setter
     def password(self, password):
         """
@@ -44,74 +43,100 @@ class User(UserMixin, db.Model):
         """
         self.pw_hash = generate_password_hash(password)
 
-    # Method to verify the hashed password
     def compare_hashed_password(self, password):
         """
         To verify if the hashed password matches the actual password
         """
         return check_password_hash(self.pw_hash, password)
 
-    # Create an event whereby name is key
-    # But first check if the event already exists
-    def create_event(self, event):
-        event_f = Event.query.filter_by(name=event.name).first()
-        if event_f:
-            # Event already exists
-            return False
-        else:
-            db.session.add(event_f)
+    def create_event(self, name, category, location, owner, description):
+        """
+        Method creates an event by first checking its existence and raising an integrity error if in existence
+        :param name:
+        :param category:
+        :param location:
+        :param owner:
+        :param description:
+        :return:
+        """
+        try:
+            event = Event(name=name, category=category, location=location, owner=owner, description=description)
+            db.session.add(event)
             db.session.commit()
             return True
+        except IntegrityError:
+            db.session.rollback()
+            print('There exists an event with that name already.Please choose another name')
 
-    # Update an event but first check if the user wants to update that field
-    # If event field is empty previous data is retained
-    # Avoid spaces by using strip function
-    def update_event(self, name, new_name, category, location, owner, description):
-        event = Event.query.filter_by(name=name).first()
-        if new_name.strip():
-            event.name = new_name
+    def update_event(self, name, new_name, category, location, description):
+        """
+        Method updates an event and if the field is empty it populates that field with previously stored info
+        :param name:
+        :param new_name:
+        :param category:
+        :param location:
+        :param description:
+        :return:
+        """
+        try:
+            event = Event.query.filter_by(name=name).first()
+            if new_name.strip():
+                event.name = new_name
 
-        if category.strip():
-            event.category = category
+            if category.strip():
+                event.category = category
 
-        if location.strip():
-            event.location = location
+            if location.strip():
+                event.location = location
 
-        if owner.strip():
-            event.owner = owner
+            if description.strip():
+                event.description = description
+            db.session.commit()
 
-        if description.strip():
-            event.description = description
-        db.session.add(event)
-        db.commit()
+        except AttributeError:
+            print('The event you want to update does not exist')
 
-    # Deletes an event but first checks if it exists
     def delete_event(self, name):
-        event = Event.query.filter_by(name=name).first()
-        if event:
+        """
+        Methods deletes an event give the name of the event
+        :param name:
+        :return:
+        """
+        try:
+            event = Event.query.filter_by(name=name).one()
             db.session.delete(event)
             db.session.commit()
-        else:
-            raise IntegrityError("There does not exist an event by that name")
+        except NoResultFound:
+            print("The event you are trying to delete does not exist")
 
-    # This method returns a specific event given the name of the event
     def get_specific_event(self, name):
-        event = Event.query.filter_by(name=name).first()
-        if event:
-            return event
-        else:
-            print('There is no such event')
+        """
+        This method returns a specific event when given the events name
+        :param name:
+        :return:
+        """
+        try:
+            event = Event.query.filter_by(name=name).first()
+            return "<Event(name='%s',category='%s',owner='%s')>" % (event.name, event.category, event.owner)
+        except AttributeError:
+            print('The event you are trying to retrieve does not exist')
             return False
 
-    # Method to return the total number of events
     def get_number_of_events(self):
-        return db.session.query(func.count(User.id))
+        """
+        This method queries and returns the total number of events a person has created
+        :return:
+        """
+        return Event.query.count()
 
-    # Method for User to change password
     def user_reset_password(self, new_pass):
+        """
+        Method to reset the password to a new value
+        :param new_pass:
+        :return:
+        """
         pass_hash = generate_password_hash(new_pass)
         self.pw_hash = pass_hash
 
-    # Return a printable representation of User class object
     def __repr__(self):
-        return '<User %r>' % self.id
+        return '<User %r>' % self.username
