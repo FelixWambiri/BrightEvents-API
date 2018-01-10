@@ -1,5 +1,5 @@
-from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm.exc import NoResultFound
 
 from app.init_db import db
 from app.models.event import Event
@@ -8,40 +8,56 @@ from app.models.user import User
 
 class UserAccounts:
     """
-    Blue print for creating and managing users
-    Contains user accounts attributes method
-    It will be responsible for displaying all events
+    Creates and manages individual user accounts
     """
 
-    # Add a new user into the database
-    def create_user(self, user):
-        user_f = User.query.filter_by(email=user.email).first()
-        if user_f:
-            raise IntegrityError("There exists a user with that email. Please use another email")
-        else:
-            db.session.add(user_f)
-            db.commit()
+    def create_user(self, username, email, password):
+        """
+        Method adds a new user to the database after confirming that the user does not already exist.The email should
+         be unique
+        :param username:
+        :param email:
+        :param password:
+        :return:
+        """
+        try:
+            user = User(username=username, email=email, password=password)
+            db.session.add(user)
+            db.session.commit()
             return True
+        except IntegrityError:
+            db.session.rollback()
+            print('There exists user with that email address.Please choose another email')
 
-    # Return a specific user
     def get_specific_user(self, email):
-        return User.query.filter_by(email=email).first()
+        """
+        This method should return one specific user given the email address of that user
+        :param email:
+        :return:
+        """
+        try:
+            user = User.query.filter_by(email=email).one()
+            return "<User(username='%s',email='%s')>" % (user.username, user.email)
+        except NoResultFound:
+            print('The user you are trying to search does not exit ')
+            return False
 
-    # Delete a user
     def delete_user(self, email):
-        user = User.query.filter_by(email=email).first()
-        if user:
+        """
+        This method deletes a specific user  given their email address
+        :param email:
+        :return:
+        """
+        try:
+            user = User.query.filter_by(email=email).one()
             db.session.delete(user)
             db.session.commit()
-        else:
-            raise IntegrityError("The User does not exist")
+        except NoResultFound:
+            print("The user you are trying to delete does not exist")
 
-    # Returns the total number of users events in the events dictionary
     def get_number_of_all_users_events(self):
-        return db.session.query(func.count(User.id))
-
-    #  Method to delete an individuals event from the public events list/page
-    def delete_an_individuals_events(self, name):
-        event = Event.query.filter_by(name=name).first()
-        db.session.delete(event)
-        db.session.commit()
+        """
+        This method queries the database and returns the total number of all the events present in the database
+        :return:
+        """
+        return Event.query.count()
