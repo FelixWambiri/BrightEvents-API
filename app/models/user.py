@@ -59,18 +59,21 @@ class User(UserMixin, db.Model):
         :param description:
         :return:
         """
-        try:
-            event = Event(name=name, category=category, location=location, owner=owner, description=description)
-            db.session.add(event)
-            db.session.commit()
-            return True
-        except IntegrityError:
-            db.session.rollback()
-            print('There exists an event with that name already.Please choose another name')
+        event_f = Event.query.filter_by(name=name).filter_by(owner=owner).first()
+        if event_f:
+            try:
+                event = Event(name=name, category=category, location=location, owner=owner, description=description)
+                db.session.add(event)
+                db.session.commit()
+                return True
+            except IntegrityError:
+                db.session.rollback()
+                print('There exists an event with that name already.Please choose another name')
 
-    def update_event(self, name, new_name, category, location, description):
+    def update_event(self, name, new_name, category, location, description, owner):
         """
         Method updates an event and if the field is empty it populates that field with previously stored info
+        :param owner:
         :param name:
         :param new_name:
         :param category:
@@ -79,7 +82,7 @@ class User(UserMixin, db.Model):
         :return:
         """
         try:
-            event = Event.query.filter_by(name=name).first()
+            event = Event.query.filter_by(name=name).filter_by(owner=owner).first()
             if new_name.strip():
                 event.name = new_name
 
@@ -96,38 +99,40 @@ class User(UserMixin, db.Model):
         except AttributeError:
             print('The event you want to update does not exist')
 
-    def delete_event(self, name):
+    def delete_event(self, name, owner):
         """
         Methods deletes an event give the name of the event
+        :param owner:
         :param name:
         :return:
         """
         try:
-            event = Event.query.filter_by(name=name).one()
+            event = Event.query.filter_by(name=name).filter_by(owner=owner).one()
             db.session.delete(event)
             db.session.commit()
         except NoResultFound:
             print("The event you are trying to delete does not exist")
 
-    def get_specific_event(self, name):
+    def get_specific_event(self, name, owner):
         """
         This method returns a specific event when given the events name
+        :param owner:
         :param name:
         :return:
         """
         try:
-            event = Event.query.filter_by(name=name).first()
+            event = Event.query.filter_by(name=name).filter_by(owner=owner).first()
             return "<Event(name='%s',category='%s',owner='%s')>" % (event.name, event.category, event.owner)
         except AttributeError:
             print('The event you are trying to retrieve does not exist')
             return False
 
-    def get_number_of_events(self):
+    def get_number_of_events(self, owner):
         """
         This method queries and returns the total number of events a person has created
         :return:
         """
-        return Event.query.count()
+        return Event.query.filter_by(owner=owner).count()
 
     def user_reset_password(self, new_pass):
         """
