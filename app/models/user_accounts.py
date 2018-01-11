@@ -24,7 +24,7 @@ class UserAccounts:
             user = User(username=username, email=email, password=password)
             db.session.add(user)
             db.session.commit()
-            return True
+            return user
         except IntegrityError:
             db.session.rollback()
             print('There exists user with that email address.Please choose another email')
