@@ -71,7 +71,7 @@ class User(UserMixin, db.Model):
             event = Event(name=name, category=category, location=location, owner=self.id, description=description)
             db.session.add(event)
             db.session.commit()
-            return True
+            return event
         except IntegrityError:
             db.session.rollback()
             print('There exists an event with that name already.Please choose another name')
