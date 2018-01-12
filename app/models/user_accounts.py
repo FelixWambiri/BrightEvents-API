@@ -37,7 +37,8 @@ class UserAccounts:
         """
         try:
             user = User.query.filter_by(email=email).one()
-            return "<User(username='%s',email='%s')>" % (user.username, user.email)
+            return user
+            # return "<User(username='%s',email='%s')>" % (user.username, user.email)
         except NoResultFound:
             print('The user you are trying to search does not exit ')
             return False
