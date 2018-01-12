@@ -13,6 +13,14 @@ class User(UserMixin, db.Model):
     With all their attributes and methods
     """
     """
+    Create a Rsvp table to show which events a user has made a reservation to
+    This table user a many to many relationship
+    """
+    rsvps = db.Table('rsvps',
+                     db.Column('user_id', db.ForeignKey('users.id'), primary_key=True),
+                     db.Column('event_id', db.ForeignKey('events.id'), primary_key=True)
+                     )
+    """
        Create a User table
        """
     __tablename__ = 'users'
@@ -21,7 +29,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(64), index=True, unique=True, nullable=False)
     password = db.Column(db.String(100))
     events = db.relationship('Event', back_populates='user')
-    rsvps = db.relationship('Rsvp', back_populates='user')
+    ind_rsvps = db.relationship('Event', secondary=rsvps, backref=db.backref('rsvps', lazy='dynamic'))
 
     def __init__(self, username, email, password):
         self.username = username
