@@ -1,5 +1,3 @@
-from sqlalchemy import func
-
 from app.init_db import db
 
 
@@ -13,46 +11,29 @@ class Event(db.Model):
     """
     __tablename__ = 'events'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(60), unique=True, nullable=False)
-    category = db.Column(db.String(60), nullable=False)
-    location = db.Column(db.String(60), nullable=False)
-    owner = db.Column(db.String(60), nullable=False)
-    description = db.Column(db.String(200), nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    rsvps = db.relationship('Rsvp', backref='event')
+    name = db.Column(db.String(64), unique=True, nullable=False)
+    category = db.Column(db.String(64), nullable=False)
+    location = db.Column(db.String(64), nullable=False)
+    description = db.Column(db.String(180), nullable=True)
+    owner = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user = db.relationship('User', back_populates='events')
 
-    def __init__(self, name, category, location, owner, description, user_id):
+    def __init__(self, name, category, location, owner, description):
         self.name = name
         self.category = category
         self.location = location
         self.owner = owner
         self.description = description
-        self.user_id = user_id
+
+    def check_reservation(self, user):
+        return self.rsvps.filter_by(id=user.id).first() is not None
+
+    def make_rsvp(self, user):
+        if not self.check_reservation(user):
+            self.rsvps.append(user)
+            db.session.add(user)
+            db.session.commit()
 
     # Return a printable representation of Event class object
     def __repr__(self):
-        return '<Event %r>' % self.name
-
-
-class Rsvp(db.Model):
-    """
-        Create an Events table
-    """
-    __tablename__ = 'rsvps'
-    id = db.Column(db.Integer, primary_key=True)
-    event_id = db.Column(db.Integer, db.ForeignKey('events.id'), nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-
-    # Method to add attendees into the attendants list
-    def add_attendants(self, email):
-        attendant = Rsvp.query.filter_by(email=email).first()
-        if attendant:
-            # User has already made a reservation
-            return False
-        else:
-            db.session.add(attendant)
-            db.commit()
-
-    # Method to know the number of attendants
-    def get_total_attendants(self):
-        return db.session.query(func.count(Rsvp.id))
+        return "<Event(name='%s',category='%s',owner='%s')>" % (self.name, self.category, self.owner)
