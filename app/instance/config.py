@@ -7,7 +7,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class BaseConfig(object):
     DEBUG = False
     SECRET_KEY = 'S\x883\xc6\x01\x07\xc5 \r\xd8\xab\\\xc4{$\xdf\xc6-\x8a\xd1\x85\xd1j'
-    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:AndelaFellow2017@localhost/BrightEventDb'
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
 # Test config class that inherits from the default config class
