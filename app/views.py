@@ -1,29 +1,17 @@
+import datetime
 import re
+from functools import wraps
 
-from flask import Flask, request, jsonify, abort, render_template
-from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+import jwt
+
+from app import app, login_manager
+
+from flask import request, jsonify, abort, render_template, make_response
 
 from app.models.event import Event
 from app.models.user import User
+
 from app.models.user_accounts import UserAccounts
-
-app = Flask(__name__)
-
-# Import the apps configuration settings from config file in instance folder
-app.config.from_object('app.instance.config.DevelopmentConfig')
-
-# Create login manager class
-login_manager = LoginManager()
-
-# Configure login
-login_manager.init_app(app)
-
-# View to be directed to for unauthorized attempt to access a protected page
-login_manager.login_view = "/api/v1/login"
-
-# Message flashed for unauthorized attempt to access a protected page
-login_manager.login_message = u"Please Login First to access this resource"
-login_manager.login_message_category = "info"
 
 # User accounts object
 user_accounts = UserAccounts()
@@ -40,6 +28,26 @@ def load_user(email):
 @app.route('/', methods=['GET'])
 def index():
     return render_template('documentation.html')
+
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        if 'x-access-token' in request.headers:
+            token = request.headers['x-access-token']
+
+        if not token:
+            return jsonify({'message': 'Token is missing'}), 401
+        try:
+            data = jwt.decode(token, app.config['SECRET_KEY'])
+            current_user = User.query.filter_by(id=data['id']).first()
+        except:
+            return jsonify({'message': 'Token is invalid'}), 401
+
+        return f(current_user, *args, **kwargs)
+
+    return decorated
 
 
 # Registration route
@@ -66,7 +74,7 @@ def register():
                        " characters or space"})
 
     # Validate the email to be properly formatted
-    if not re.match(r"([\w\.-]+)@([\w\.-]+)(\.[\w\.]+$)", email):
+    if not re.match(r"([\w.-]+)@([\w.-]+)(\.[\w.]+$)", email):
         return jsonify({"Warning": "Please enter a valid email"})
 
     # Validate the password to comprised of certain characters to make it more stronger and secure
@@ -79,8 +87,7 @@ def register():
     if user_accounts.get_specific_user(email):
         return jsonify({"Warning": "User already exists, choose another username"})
     else:
-        user = User(username=username, email=email, password=password)
-        user_accounts.create_user(user)
+        user_accounts.create_user(username=username, email=email, password=password)
         response = jsonify({"Success": "You have been registered successfully and can proceed to login"})
         response.status_code = 201  # Created
         return response
@@ -89,58 +96,42 @@ def register():
 # Login route
 @app.route('/api/v1/auth/login', methods=['POST'])
 def login():
-    data = request.get_json()
-    email = data['email']
-    password_f = data['password']
-    if email is None or password_f is None:
-        abort(400)
-    user = user_accounts.get_specific_user(email)
-    if user:
-        if user.compare_hashed_password(password_f):
-            login_user(user_accounts.get_specific_user(email))
-            response = jsonify({"Success": "You were successfully logged in"})
-            response.status_code = 200  # Ok
-            return response
-
-        else:
-            response = jsonify({"Warning": 'Invalid Credentials'})
-            response.status_code = 401  # Unauthorized
-            return response
-
+    auth = request.authorization
+    if not auth or not auth.username or not auth.password:
+        return make_response('Could not verify because not all fields were entered', 401,
+                             {'WWW-Authenticate': 'Basic realm-"Login required"'})
+    user = user_accounts.get_specific_user(auth.username)
+    if not user:
+        return make_response('Could not verify because it did not find the user in the database', 401,
+                             {'WWW-Authenticate': 'Basic realm-"Login required"'})
+    if user.compare_hashed_password(auth.password):
+        token = jwt.encode({'id': user.id, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)},
+                           app.config['SECRET_KEY'])
+        return jsonify({'token': token.decode('UTF-8')})
     else:
         response = jsonify({"Warning": 'Invalid Credentials'})
         response.status_code = 401  # Unauthorized
         return response
 
 
-# Logout route
-@app.route('/api/v1/auth/logout', methods=['POST'])
-@login_required
-def logout():
-    logout_user()
-    response = jsonify({"success": 'You are logged out'})
-    response.status_code = 200  # Ok
-    return response
-
-
 # User crud operations
 # Create an event
 @app.route('/api/v1/events', methods=['POST'])
-@login_required
-def create_events():
+@token_required
+def create_events(current_user):
     data = request.get_json()
     name = data['name'].strip()
     category = data['category'].strip()
     location = data['location'].strip()
-    owner = data['owner'].strip()
+    # owner = data['owner'].strip()
     description = data['description'].strip()
 
     # Validate these fields against being empty
-    if name is None or category is None or location is None or owner is None:
+    if name is None or category is None or location is None:
         abort(400)
 
     # Validate the length of these fields to be more than five characters
-    if len(name) < 5 or len(category) < 5 or len(location) < 5 or len(owner) < 5:
+    if len(name) < 5 or len(category) < 5 or len(location) < 5:
         return jsonify({"Warning": "This fields must be more than 5 characters and not empty spaces"})
 
     # Validate the name against special characters and spaces
@@ -150,15 +141,15 @@ def create_events():
                        " characters or space"})
 
     # Validate the category, location and owner fields to be comprised of only alphabetic characters
-    if not category.isalpha() or not location.isalpha() or not owner.isalpha():
+    if not category.isalpha() or not location.isalpha():
         return jsonify({"Warning": "Please enter a valid input"})
-    event = Event(name=name, category=category, location=location, owner=owner, description=description)
+    # event = Event()
     try:
-        current_user.create_event(event)
-        user_accounts.add_all_individual_events(None, current_user)
+        event = current_user.create_event(name=name, category=category, location=location, description=description)
+        # user_accounts.add_all_individual_events(None, current_user)
         response = jsonify({"Success": "Event created successfully",
                             "event": {"name": event.name, "category": event.category, "location": event.location,
-                                      "owner": owner, "description": event.description}})
+                                      "description": event.description}})
         response.status_code = 201  # Created
         return response
     except KeyError:
@@ -166,25 +157,21 @@ def create_events():
 
 
 # Update an Event
-# Name field should not be editable
 @app.route('/api/v1/events/<string:event_name>', methods=['PUT'])
-@login_required
-def update_events(event_name):
+@token_required
+def update_events(current_user, event_name):
     data = request.get_json()
     new_name = data['new_name']
     category = data['category']
     location = data['location']
-    owner = data['owner']
     description = data['description']
 
     try:
         event = current_user.update_event(event_name, new_name=new_name, category=category, location=location,
-                                          owner=owner,
                                           description=description)
-        user_accounts.add_all_individual_events(event_name, current_user)
         return jsonify({'success': 'The event has been updated successfully',
                         "event": {"name": event.name, "category": event.category, "location": event.location,
-                                  "owner": owner, "description": event.description}})
+                                  "description": event.description}})
     except KeyError:
         response = jsonify({'warning': 'The event does not exist'})
         response.status_code = 404  # Not found
@@ -193,15 +180,14 @@ def update_events(event_name):
 
 # Delete an event from both the personal events list and the public events list"
 @app.route('/api/v1/events/<string:event_name>', methods=['DELETE'])
-@login_required
-def delete_events(event_name):
+@token_required
+def delete_events(current_user, event_name):
     try:
         current_user.delete_event(event_name)
-        user_accounts.delete_an_individuals_events(event_name)
         response = jsonify({"Success": "Event deleted successfully"})
         response.status_code = 204
         return response
-    except KeyError:
+    except AttributeError:
         response = jsonify({'warning': 'The event does not exist'})
         response.status_code = 404  # Not found
         return response
@@ -209,15 +195,14 @@ def delete_events(event_name):
 
 # Retrieves an individual event
 @app.route('/api/v1/events/<event_name>', methods=['GET'])
-@login_required
-def get_an_individual_event(event_name):
+@token_required
+def get_a_specific_event(current_user, event_name):
     if current_user.get_number_of_events() > 0:
-
         try:
             event = current_user.get_specific_event(event_name)
             return jsonify({"event": {"name": event.name, "category": event.category, "location": event.location,
-                                      "owner": event.owner, "description": event.description}})
-        except KeyError:
+                                      "description": event.description}})
+        except AttributeError:
             response = jsonify({'warning': 'There is no such event'})
             response.status_code = 404  # Not found
             return response
@@ -227,51 +212,30 @@ def get_an_individual_event(event_name):
 
 # Route to display all events
 @app.route('/api/v1/events', methods=['GET'])
-@login_required
-def get_all_events():
+@token_required
+def get_an_individuals_all_events(current_user):
     if current_user.get_number_of_events() > 0:
-        # list to store all events
-        events = []
-        for event in current_user.events_dict.values():
-            # add events into list by  appending them
-            events.append({'name': event.name, "category": event.category, "location": event.location})
-        return jsonify({'Events': events})
-    else:
-        return jsonify({'Info': "No event created so far"})
+        events = Event.query.filter_by(owner=current_user.id).all()
+        output = []
+        for event in events:
+            event_data = {'name': event.name, 'category': event.category, 'location': event.location,
+                          'description': event.description}
+            output.append(event_data)
+        return jsonify({'events': output})
 
 
 # Route to rsvp to an event
-@app.route('/api/v1/event/<event_name>/rsvp', methods=['POST'])
-@login_required
-def rsvp_event(event_name):
-    event_dict = user_accounts.events
-    event = event_dict.get(event_name)
-    if current_user.username not in event.event_attendees:
-        event.add_attendants(current_user.id, current_user.username)
-        response = jsonify({'success': 'You have rsvp into an event successfully'})
-        response.status_code = 200
-        return response
-    else:
-        return jsonify({'warning': 'You have already made an RSVP to this event'})
-
-
-# Endpoint to see all those attending a certain event
-@app.route('/api/v1/event/<event_name>/rsvp', methods=['GET'])
-@login_required
-def view_events_attendants(event_name):
-    event_dict = user_accounts.events
-    event = event_dict.get(event_name)
-    if event.get_total_attendants() > 0:
-        for name, email in event.event_attendees.items():
-            return jsonify({"attendants name": name, "attendants email": email})
-    else:
-        return jsonify({'Info': 'Currently no one has RSVP to attend your Event'})
+@app.route('/api/v1/event/<name>/rsvp', methods=['POST'])
+@token_required
+def rsvp_event(current_user, name):
+    event = Event.query.filter_by(name=name).first()
+    return event.make_rsvp(current_user)
 
 
 # Route to reset password
 @app.route('/api/auth/reset_password', methods=['POST'])
-@login_required
-def reset_password():
+@token_required
+def reset_password(current_user):
     data = request.get_json()
     previous_password = data['previous_password']
     new_password = data['new_password'].strip()
