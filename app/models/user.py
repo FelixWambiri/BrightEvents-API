@@ -1,9 +1,6 @@
-from flask import current_app
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta
-import jwt
 
 from app.init_db import db
 from app.models.event import Event
@@ -58,42 +55,6 @@ class User(db.Model):
         To verify if the hashed password matches the actual password
         """
         return check_password_hash(self.pw_hash, password)
-
-    def generate_token(self):
-        """ Generates the access token"""
-
-        try:
-            # set up a payload with an expiration time
-            payload = {
-                'exp': datetime.utcnow() + timedelta(minutes=30),
-                'iat': datetime.utcnow(),
-                'sub': self.id
-            }
-            # The byte string token created using the payload and the SECRET key
-            jwt_string = jwt.encode(
-                payload,
-                current_app.config.get('SECRET'),
-                algorithm='HS256'
-            )
-            return jwt_string
-
-        except Exception as e:
-            # return an error in string format if an exception occurs
-            return str(e)
-
-    @staticmethod
-    def decode_token(token):
-        """Decodes the access token from the Authorization header."""
-        try:
-            # Decode the token using our SECRET variable
-            payload = jwt.decode(token, current_app.config.get('SECRET'))
-            return payload['sub']
-        except jwt.ExpiredSignatureError:
-            # if the token is expired, return an error string
-            return "Expired token. Please login to get a new token"
-        except jwt.InvalidTokenError:
-            # if the token is invalid, return an error string
-            return "Invalid token. Please register or login"
 
     def create_event(self, name, category, location, description):
         """
