@@ -3,8 +3,9 @@ import re
 from functools import wraps
 
 import jwt
+from sqlalchemy.exc import IntegrityError
 
-from app import app, login_manager
+from app import app
 
 from flask import request, jsonify, abort, render_template, make_response
 
@@ -15,12 +16,6 @@ from app.models.user_accounts import UserAccounts
 
 # User accounts object
 user_accounts = UserAccounts()
-
-
-# Callback method to reload the user object
-@login_manager.user_loader
-def load_user(email):
-    return user_accounts.get_specific_user(email)
 
 
 # Root endpoint
@@ -80,12 +75,12 @@ def register():
     # Validate the password to comprised of certain characters to make it more stronger and secure
     if not re.search("[a-z]", password) or not re.search("[0-9]", password) or not re.search("[A-Z]",
                                                                                              password) or not re.search(
-        "[$#@]", password):
+            "[$#@]", password):
         return jsonify({
             "Warning": "Invalid Password.The password must contain at least one lowercase character,one digit,"
                        "one upper case character and one special character"})
     if user_accounts.get_specific_user(email):
-        return jsonify({"Warning": "User already exists, choose another username"})
+        return jsonify({"Warning": "User already exists with email address, choose another email address"})
     else:
         user_accounts.create_user(username=username, email=email, password=password)
         response = jsonify({"Success": "You have been registered successfully and can proceed to login"})
@@ -137,7 +132,7 @@ def create_events(current_user):
     # Validate the name against special characters and spaces
     if not re.match("^[a-zA-Z0-9_]*$", name):
         return jsonify({
-            "Warning": "Invalid username.The username can contain letters, digits and underscore but no special"
+            "Warning": "Invalid event name.The event name can contain letters, digits and underscore but no special"
                        " characters or space"})
 
     # Validate the category, location and owner fields to be comprised of only alphabetic characters
@@ -152,14 +147,14 @@ def create_events(current_user):
                                       "description": event.description}})
         response.status_code = 201  # Created
         return response
-    except KeyError:
+    except AttributeError:
         return jsonify({"Warning": 'The event already exists'})
 
 
 # Update an Event
-@app.route('/api/v1/events/<string:event_name>', methods=['PUT'])
+@app.route('/api/v1/events/<string:name>', methods=['PUT'])
 @token_required
-def update_events(current_user, event_name):
+def update_events(current_user, name):
     data = request.get_json()
     new_name = data['new_name']
     category = data['category']
@@ -167,12 +162,12 @@ def update_events(current_user, event_name):
     description = data['description']
 
     try:
-        event = current_user.update_event(event_name, new_name=new_name, category=category, location=location,
+        event = current_user.update_event(name, new_name=new_name, category=category, location=location,
                                           description=description)
         return jsonify({'success': 'The event has been updated successfully',
                         "event": {"name": event.name, "category": event.category, "location": event.location,
                                   "description": event.description}})
-    except KeyError:
+    except AttributeError:
         response = jsonify({'warning': 'The event does not exist'})
         response.status_code = 404  # Not found
         return response
@@ -185,7 +180,7 @@ def delete_events(current_user, event_name):
     try:
         current_user.delete_event(event_name)
         response = jsonify({"Success": "Event deleted successfully"})
-        response.status_code = 204
+        response.status_code = 200
         return response
     except AttributeError:
         response = jsonify({'warning': 'The event does not exist'})
@@ -222,6 +217,7 @@ def get_an_individuals_all_events(current_user):
                           'description': event.description}
             output.append(event_data)
         return jsonify({'events': output})
+    return jsonify({'Message': 'So far you have not created any events'})
 
 
 # Route to rsvp to an event
@@ -229,7 +225,13 @@ def get_an_individuals_all_events(current_user):
 @token_required
 def rsvp_event(current_user, name):
     event = Event.query.filter_by(name=name).first()
-    return event.make_rsvp(current_user)
+    if event:
+        try:
+            event.make_rsvp(current_user)
+            return jsonify({'success': 'You have made a reservation successfully'})
+        except IntegrityError:
+            return jsonify({'warning': 'You cannot make a reservation twice'})
+    return jsonify({'warning': 'The event you are trying to make a reservation to does not exist'})
 
 
 # Route to reset password
