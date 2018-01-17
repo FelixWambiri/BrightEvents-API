@@ -1,16 +1,16 @@
 """
 To write command-line tasks belonging outside the web app itself
 """
+import os
 import unittest
 
 from flask_migrate import Migrate, MigrateCommand
 from flask_script import Manager
 
 # Getting the flask instance
-from app import app
-from app.init_db import db
+from app import db, create_app
 
-app.config.from_object('app.instance.config.DevelopmentConfig')
+app = create_app(config_name=os.getenv('APP_SETTINGS'))
 
 migrate = Migrate(app, db)
 
