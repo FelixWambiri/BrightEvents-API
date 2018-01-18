@@ -5,7 +5,9 @@ from functools import wraps
 import jwt
 from sqlalchemy.exc import IntegrityError
 
-from app import app
+from app import create_app
+
+app = create_app(config_name='development')
 
 from flask import request, jsonify, abort, render_template, make_response
 
@@ -47,7 +49,7 @@ def token_required(f):
 
 # Registration route
 # All fields must be filled
-@app.route('/api/v1/auth/register', methods=['POST'])
+@app.route('/api/auth/register', methods=['POST'])
 def register():
     data = request.get_json()
     username = data['username'].strip()
@@ -75,7 +77,7 @@ def register():
     # Validate the password to comprised of certain characters to make it more stronger and secure
     if not re.search("[a-z]", password) or not re.search("[0-9]", password) or not re.search("[A-Z]",
                                                                                              password) or not re.search(
-            "[$#@]", password):
+        "[$#@]", password):
         return jsonify({
             "Warning": "Invalid Password.The password must contain at least one lowercase character,one digit,"
                        "one upper case character and one special character"})
@@ -89,7 +91,7 @@ def register():
 
 
 # Login route
-@app.route('/api/v1/auth/login', methods=['POST'])
+@app.route('/api/auth/login', methods=['POST'])
 def login():
     auth = request.authorization
     if not auth or not auth.username or not auth.password:
@@ -111,14 +113,13 @@ def login():
 
 # User crud operations
 # Create an event
-@app.route('/api/v1/events', methods=['POST'])
+@app.route('/api/events', methods=['POST'])
 @token_required
 def create_events(current_user):
     data = request.get_json()
     name = data['name'].strip()
     category = data['category'].strip()
     location = data['location'].strip()
-    # owner = data['owner'].strip()
     description = data['description'].strip()
 
     # Validate these fields against being empty
@@ -138,10 +139,8 @@ def create_events(current_user):
     # Validate the category, location and owner fields to be comprised of only alphabetic characters
     if not category.isalpha() or not location.isalpha():
         return jsonify({"Warning": "Please enter a valid input"})
-    # event = Event()
     try:
         event = current_user.create_event(name=name, category=category, location=location, description=description)
-        # user_accounts.add_all_individual_events(None, current_user)
         response = jsonify({"Success": "Event created successfully",
                             "event": {"name": event.name, "category": event.category, "location": event.location,
                                       "description": event.description}})
@@ -152,7 +151,7 @@ def create_events(current_user):
 
 
 # Update an Event
-@app.route('/api/v1/events/<string:name>', methods=['PUT'])
+@app.route('/api/events/<string:name>', methods=['PUT'])
 @token_required
 def update_events(current_user, name):
     data = request.get_json()
@@ -174,7 +173,7 @@ def update_events(current_user, name):
 
 
 # Delete an event from both the personal events list and the public events list"
-@app.route('/api/v1/events/<string:event_name>', methods=['DELETE'])
+@app.route('/api/events/<string:event_name>', methods=['DELETE'])
 @token_required
 def delete_events(current_user, event_name):
     try:
@@ -189,7 +188,7 @@ def delete_events(current_user, event_name):
 
 
 # Retrieves an individual event
-@app.route('/api/v1/events/<event_name>', methods=['GET'])
+@app.route('/api/events/<event_name>', methods=['GET'])
 @token_required
 def get_a_specific_event(current_user, event_name):
     if current_user.get_number_of_events() > 0:
@@ -206,7 +205,7 @@ def get_a_specific_event(current_user, event_name):
 
 
 # Route to display all events
-@app.route('/api/v1/events', methods=['GET'])
+@app.route('/api/events', methods=['GET'])
 @token_required
 def get_an_individuals_all_events(current_user):
     if current_user.get_number_of_events() > 0:
@@ -221,21 +220,34 @@ def get_an_individuals_all_events(current_user):
 
 
 # Route to rsvp to an event
-@app.route('/api/v1/event/<name>/rsvp', methods=['POST'])
+@app.route('/api/event/<name>/rsvp', methods=['GET', 'POST'])
 @token_required
 def rsvp_event(current_user, name):
-    event = Event.query.filter_by(name=name).first()
-    if event:
-        try:
-            event.make_rsvp(current_user)
-            return jsonify({'success': 'You have made a reservation successfully'})
-        except IntegrityError:
-            return jsonify({'warning': 'You cannot make a reservation twice'})
-    return jsonify({'warning': 'The event you are trying to make a reservation to does not exist'})
+    if request.method == 'POST':
+        event = Event.query.filter_by(name=name).first_or_404
+        if event:
+            try:
+                event.make_rsvp(current_user)
+                return jsonify({'success': 'You have made a reservation successfully'}), 201
+            except IntegrityError:
+                return jsonify({'warning': 'You cannot make a reservation twice'}), 302
+        return jsonify({'warning': 'The event you are trying to make a reservation to does not exist'})
+    else:
+        event = Event.query.filter_by(name=name).filter_by(owner=current_user.id).first_or_404
+        if event:
+            event_rsvps = event.rsvps.query.all
+            if event_rsvps:
+                reservations = []
+                for user in event_rsvps:
+                    user_data = {'username': user.username, 'email': user.email}
+                    reservations.append(user_data)
+                return jsonify({'Attendants': reservations})
+            return jsonify({"Message": "No reservations have been made to this event yet"})
+        return jsonify({'Warning': 'The event you are searching for does not exist'})
 
 
 # Route to reset password
-@app.route('/api/auth/reset_password', methods=['POST'])
+@app.route('/api/auth/reset-password', methods=['POST'])
 @token_required
 def reset_password(current_user):
     data = request.get_json()
