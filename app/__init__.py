@@ -1,22 +1,20 @@
+from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
-from flask_login import LoginManager
 
-app = Flask(__name__)
 
-# Import the apps configuration settings from config file in instance folder
-app.config.from_object('app.instance.config.DevelopmentConfig')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:AndelaFellow2017@localhost/BrightEventDb'
-SQLALCHEMY_TRACK_MODIFICATIONS = True
+from app.instance.config import app_config
 
-# Create login manager class
-login_manager = LoginManager()
+# Initialize sql-alchemy
+db = SQLAlchemy()
 
-# Configure login
-login_manager.init_app(app)
 
-# View to be directed to for unauthorized attempt to access a protected page
-login_manager.login_view = "/api/v1/login"
+def create_app(config_name):
+    app = Flask(__name__, instance_relative_config=True)
+    app.config.from_object(app_config[config_name])
+    db.init_app(app)
 
-# Message flashed for unauthorized attempt to access a protected page
-login_manager.login_message = u"Please Login First to access this resource"
-login_manager.login_message_category = "info"
+    return app
+
+
+
+
