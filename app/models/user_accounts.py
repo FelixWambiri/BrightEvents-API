@@ -1,7 +1,7 @@
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 
-from app.init_db import db
+from app import db
 from app.models.event import Event
 from app.models.user import User
 
