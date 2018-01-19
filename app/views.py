@@ -8,7 +8,6 @@ from sqlalchemy.exc import IntegrityError
 from app import create_app
 
 app = create_app(config_name='development')
-
 from flask import request, jsonify, abort, render_template, make_response
 
 from app.models.event import Event
@@ -85,9 +84,8 @@ def register():
         return jsonify({"Warning": "User already exists with email address, choose another email address"})
     else:
         user_accounts.create_user(username=username, email=email, password=password)
-        response = jsonify({"Success": "You have been registered successfully and can proceed to login"})
-        response.status_code = 201  # Created
-        return response
+        response = {'message': 'You have been registered successfully and can proceed to login'}
+        return make_response(jsonify(response)), 201
 
 
 # Login route
@@ -244,6 +242,34 @@ def rsvp_event(current_user, name):
                 return jsonify({'Attendants': reservations})
             return jsonify({"Message": "No reservations have been made to this event yet"})
         return jsonify({'Warning': 'The event you are searching for does not exist'})
+
+
+@app.route('/api/event/search_by_loc/<location>', methods=['GET'])
+@token_required
+def search_by_location(current_user, location):
+    events_returned = current_user.search_event_by_location(location)
+    events = []
+    if events_returned:
+        for event in events_returned:
+            event_data = {'name': event.name, 'category': event.category, 'description': event.description}
+            events.append(event_data)
+        return jsonify({'Events found in this location': events}), 200
+
+    return jsonify({'message': 'There are no events that have been organized here so far'})
+
+
+@app.route('/api/event/search_by_cat/<category>', methods=['GET'])
+@token_required
+def search_by_category(current_user, category):
+    events_returned = current_user.search_event_by_category(category)
+    events = []
+    if events_returned:
+        for event in events_returned:
+            event_data = {'name': event.name, 'category': event.category, 'description': event.description}
+            events.append(event_data)
+        return jsonify({'Events found in this category': events}), 200
+
+    return jsonify({'message': 'There are no events that have been organized here so far'})
 
 
 # Route to reset password
