@@ -136,6 +136,14 @@ class User(db.Model):
         """
         return Event.query.filter_by(owner=self.id).count()
 
+    def search_event_by_category(self, category):
+        """This method searches an event by category and is case insensitive"""
+        return Event.query.filter(Event.category.ilike(category)).all()
+
+    def search_event_by_location(self, location):
+        """This method searches an event by location and is case insensitive"""
+        return Event.query.filter(Event.location.ilike(location)).all()
+
     def user_reset_password(self, new_pass):
         """
         Method to reset the password to a new value
