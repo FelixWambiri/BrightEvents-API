@@ -16,7 +16,7 @@ class TestingConfig(BaseConfig):
     DEBUG = True
     TESTING = True
     PRESERVE_CONTEXT_ON_EXCEPTION = False
-    SQLALCHEMY_DATABASE_URI = os.getenv('TEST_DATABASE_URI')
+    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:AndelaFellow2017@localhost/BrightEventTestDb'
 
 
 class DevelopmentConfig(BaseConfig):
