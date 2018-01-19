@@ -204,10 +204,11 @@ def get_a_specific_event(current_user, event_name):
 
 # Route to display all events
 @app.route('/api/events', methods=['GET'])
+@app.route('/api/events/<int:page>', methods=['GET'])
 @token_required
-def get_an_individuals_all_events(current_user):
+def get_an_individuals_all_events(current_user, page=1):
     if current_user.get_number_of_events() > 0:
-        events = Event.query.filter_by(owner=current_user.id).all()
+        events = Event.query.filter_by(owner=current_user.id).paginate(page, per_page=3, error_out=True).items
         output = []
         for event in events:
             event_data = {'name': event.name, 'category': event.category, 'location': event.location,
@@ -245,9 +246,10 @@ def rsvp_event(current_user, name):
 
 
 @app.route('/api/event/search_by_loc/<location>', methods=['GET'])
+@app.route('/api/event/search_by_loc/<location>/<int:page>', methods=['GET'])
 @token_required
-def search_by_location(current_user, location):
-    events_returned = current_user.search_event_by_location(location)
+def search_by_location(current_user, location, page=1):
+    events_returned = current_user.search_event_by_location(location, page)
     events = []
     if events_returned:
         for event in events_returned:
@@ -259,9 +261,10 @@ def search_by_location(current_user, location):
 
 
 @app.route('/api/event/search_by_cat/<category>', methods=['GET'])
+@app.route('/api/event/search_by_cat/<category>/<int:page>', methods=['GET'])
 @token_required
-def search_by_category(current_user, category):
-    events_returned = current_user.search_event_by_category(category)
+def search_by_category(current_user, category, page=1):
+    events_returned = current_user.search_event_by_category(category, page)
     events = []
     if events_returned:
         for event in events_returned:
