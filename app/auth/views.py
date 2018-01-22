@@ -123,3 +123,4 @@ def reset_password(current_user):
         return response
     else:
         return jsonify({'warning': 'Please try to remember you previous password'})
+
