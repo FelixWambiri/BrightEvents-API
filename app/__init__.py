@@ -1,20 +1,16 @@
-from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
 
+from app.auth import auth
+from app.events import event
+from app.init_db import db
 
 from app.instance.config import app_config
-
-# Initialize sql-alchemy
-db = SQLAlchemy()
 
 
 def create_app(config_name):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(app_config[config_name])
     db.init_app(app)
-
+    app.register_blueprint(auth, url_prefix='/api/auth')
+    app.register_blueprint(event, url_prefix='/api')
     return app
-
-
-
-
