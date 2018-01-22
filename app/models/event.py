@@ -1,4 +1,4 @@
-from app import db
+from app.init_db import db
 
 
 class Event(db.Model):
@@ -26,13 +26,16 @@ class Event(db.Model):
         self.description = description
 
     def check_reservation(self, user):
-        return self.rsvps.filter_by(id=user.id).first() is not None
+        return self.rsvps.filter_by(id=user.id).first()
 
     def make_rsvp(self, user):
-        if not self.check_reservation(user):
+        if self.check_reservation(user) is None:
             self.rsvps.append(user)
             db.session.add(user)
             db.session.commit()
+        else:
+            raise AttributeError(
+                "You cannot make a reservation twice and you cannot make a reservation to your own event")
 
     # Return a printable representation of Event class object
     def __repr__(self):
