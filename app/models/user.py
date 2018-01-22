@@ -1,8 +1,7 @@
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm.exc import NoResultFound
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from app import db
+from app.init_db import db
 from app.models.event import Event
 
 
@@ -99,7 +98,7 @@ class User(db.Model):
             if description.strip():
                 event.description = description
             db.session.commit()
-
+            return event
         except AttributeError:
             print('The event you want to update does not exist')
 
@@ -109,12 +108,12 @@ class User(db.Model):
         :param name:
         :return:
         """
-        try:
-            event = Event.query.filter_by(name=name).filter_by(owner=self.id).one()
+        event = Event.query.filter_by(name=name).filter_by(owner=self.id).first()
+        if event:
             db.session.delete(event)
             db.session.commit()
-        except NoResultFound:
-            print("The event you are trying to delete does not exist")
+        else:
+            raise AttributeError
 
     def get_specific_event(self, name):
         """
@@ -124,7 +123,7 @@ class User(db.Model):
         """
         try:
             event = Event.query.filter_by(name=name).filter_by(owner=self.id).first()
-            return "<Event(name='%s',category='%s',owner='%s')>" % (event.name, event.category, event.owner)
+            return event
         except AttributeError:
             print('The event you are trying to retrieve does not exist')
             return False
