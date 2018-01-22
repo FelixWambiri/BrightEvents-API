@@ -4,7 +4,7 @@ import os
 from app import create_app
 
 development = os.getenv('APP_SETTINGS')
-app = create_app(development)
+app = create_app(config_name='development')
 
 if __name__ == '__main__':
     app.run()
