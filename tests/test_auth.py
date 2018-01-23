@@ -11,6 +11,7 @@ class AuthTestCase(unittest.TestCase):
     def setUp(self):
         """Set up reusable test variables."""
         self.app = create_app(config_name='testing')
+        self.app.app_context().push()
         self.user_data = json.dumps(
             {
                 'username': 'Feloh',
@@ -28,10 +29,7 @@ class AuthTestCase(unittest.TestCase):
             db.drop_all()
             db.create_all()
 
-    def tearDown(self):
-        db.session.remove()
-        db.drop_all()
-        del self.client
+
 
     def test_registration(self):
         """Test whether user registration works correctly."""
@@ -108,3 +106,12 @@ class AuthTestCase(unittest.TestCase):
                              b64encode(b"felo@gmail.com:FelixWambiri12@3456")
                                  .decode("ascii")}, content_type='application/json')
         self.assertIn(b'Invalid Credentials', res_1.data)
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        del self.client
+
+
+if __name__ == '__main__':
+    unittest.main()
