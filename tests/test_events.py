@@ -85,11 +85,6 @@ class EventTestCase(unittest.TestCase):
             db.drop_all()
             db.create_all()
 
-    def tearDown(self):
-        db.session.remove()
-        db.drop_all()
-        del self.client
-
     def register_user1(self):
         return self.client.post('/api/auth/register', data=self.user1_data, content_type='application/json')
 
@@ -648,6 +643,11 @@ class EventTestCase(unittest.TestCase):
         """Test that it cannot return an event if no event belongs to that category"""
         result1 = self.client.get('/api/event/search_by_cat/Hiking', headers=headers4)
         self.assertIn(b'There are no events that have been organized here so far', result1.data)
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        del self.client
 
 
 if __name__ == '__main__':
