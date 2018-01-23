@@ -12,6 +12,7 @@ class EventTestCase(unittest.TestCase):
     def setUp(self):
         """Set up reusable test variables."""
         self.app = create_app(config_name='testing')
+        self.app.app_context().push()
         self.event1_data = json.dumps(
             {
                 'name': 'Bootcamp',
@@ -648,3 +649,6 @@ class EventTestCase(unittest.TestCase):
         result1 = self.client.get('/api/event/search_by_cat/Hiking', headers=headers4)
         self.assertIn(b'There are no events that have been organized here so far', result1.data)
 
+
+if __name__ == '__main__':
+    unittest.main()
