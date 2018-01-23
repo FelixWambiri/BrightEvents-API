@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/FelixWambiri/BrightEvents-API.svg?branch=ft-Endpoints)](https://travis-ci.org/FelixWambiri/BrightEvents-API)
+[![Build Status](https://travis-ci.org/FelixWambiri/BrightEvents-API.svg?branch=ft-database)](https://travis-ci.org/FelixWambiri/BrightEvents-API)
 [![Coverage Status](https://coveralls.io/repos/github/FelixWambiri/BrightEvents-API/badge.svg)](https://coveralls.io/github/FelixWambiri/BrightEvents-API)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/78038ec13919450ea2bf883bc0ab7fa5)](https://www.codacy.com/app/FelixWambiri/BrightEvents-API?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=FelixWambiri/BrightEvents-API&amp;utm_campaign=Badge_Grade)
 # BrightEvents
