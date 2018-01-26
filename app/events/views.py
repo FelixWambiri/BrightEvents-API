@@ -22,22 +22,25 @@ def create_events(current_user):
 
     # Validate the length of these fields to be more than five characters
     if len(name) < 5 or len(category) < 5 or len(location) < 5:
-        return jsonify({"Warning": "This fields must be more than 5 characters and not empty spaces"})
+        return jsonify(
+            {"Warning": "Please input data that is more than five characters and do not include empty spaces"})
 
     # Validate the name against special characters and spaces
     if not re.match("^[a-zA-Z0-9_]*$", name):
         return jsonify({
-            "Warning": "Invalid event name.The event name can contain letters, digits and underscore but no special"
-                       " characters or space"})
+            "Warning": "Invalid event name entered.The event name can contain alphanumeric characters and an underscore"
+                       "but no special characters or spaces between words,use an underscore instead"})
 
     # Validate the category, location and owner fields to be comprised of only alphabetic characters
     if not category.isalpha() or not location.isalpha():
-        return jsonify({"Warning": "Please enter a valid input"})
+        return jsonify({"Warning": "Invalid data entered.Please enter alphabetic characters only"})
     try:
-        event = current_user.create_event(name=name, category=category, location=location, description=description)
+        event_found = current_user.create_event(name=name, category=category, location=location,
+                                                description=description)
         response = jsonify({"Success": "Event created successfully",
-                            "event": {"name": event.name, "category": event.category, "location": event.location,
-                                      "description": event.description}})
+                            "event": {"name": event_found.name, "category": event_found.category,
+                                      "location": event_found.location, "description": event_found.description}})
+
         response.status_code = 201  # Created
         return response
     except AttributeError:
@@ -54,11 +57,11 @@ def update_events(current_user, name):
     location = data['location']
     description = data['description']
     try:
-        event = current_user.update_event(name, new_name=new_name, category=category, location=location,
-                                          description=description)
+        event_found = current_user.update_event(name, new_name=new_name, category=category, location=location,
+                                                description=description)
         return jsonify({'success': 'The event has been updated successfully',
-                        "event": {"name": event.name, "category": event.category, "location": event.location,
-                                  "description": event.description}}), 200
+                        "event": {"name": event_found.name, "category": event_found.category,
+                                  "location": event_found.location, "description": event_found.description}}), 200
 
     except AttributeError:
         response = jsonify({'warning': 'The event does not exist'})
@@ -87,9 +90,10 @@ def delete_events(current_user, event_name):
 def get_user_specific_event(current_user, event_name):
     if current_user.get_number_of_events() > 0:
         try:
-            event = current_user.get_specific_event(event_name)
-            return jsonify({"event": {"name": event.name, "category": event.category, "location": event.location,
-                                      "description": event.description}})
+            event_found = current_user.get_specific_event(event_name)
+            return jsonify(
+                {"event": {"name": event_found.name, "category": event_found.category, "location": event_found.location,
+                           "description": event_found.description}})
         except AttributeError:
             response = jsonify({'warning': 'There is no such event'})
             response.status_code = 404  # Not found
@@ -104,11 +108,11 @@ def get_user_specific_event(current_user, event_name):
 @token_required
 def get_an_individuals_all_events(current_user, page=1):
     if current_user.get_number_of_events() > 0:
-        events_r = Event.query.filter_by(owner=current_user.id).paginate(page, per_page=3, error_out=True).items
+        event_found = Event.query.filter_by(owner=current_user.id).paginate(page, per_page=3, error_out=True).items
         output = []
-        for event in events_r:
-            event_data = {'name': event.name, 'category': event.category, 'location': event.location,
-                          'description': event.description}
+        for s_event in event_found:
+            event_data = {'name': s_event.name, 'category': s_event.category, 'location': s_event.location,
+                          'description': s_event.description}
             output.append(event_data)
         return jsonify({'events': output})
     return jsonify({'Message': 'So far you have not created any events'})
@@ -119,10 +123,10 @@ def get_an_individuals_all_events(current_user, page=1):
 @token_required
 def rsvp_event(current_user, name):
     if request.method == 'POST':
-        event = Event.query.filter_by(name=name).first_or_404()
-        if event:
+        event_found = Event.query.filter_by(name=name).first_or_404()
+        if event_found:
             try:
-                event.make_rsvp(current_user)
+                event_found.make_rsvp(current_user)
                 return jsonify({'success': 'You have made a reservation successfully'}), 201
             except AttributeError:
                 return jsonify({
@@ -130,9 +134,9 @@ def rsvp_event(current_user, name):
                                'reservation to your own event'}), 302
         return jsonify({'warning': 'The event you are trying to make a reservation to does not exist'})
     if request.method == 'GET':
-        event = Event.query.filter_by(name=name).filter_by(owner=current_user.id).first_or_404()
-        if event:
-            event_rsvps = event.rsvps.all()
+        event_found = Event.query.filter_by(name=name).filter_by(owner=current_user.id).first_or_404()
+        if event_found:
+            event_rsvps = event_found.rsvps.all()
             if event_rsvps:
                 reservations = []
                 for user in event_rsvps:
@@ -143,31 +147,34 @@ def rsvp_event(current_user, name):
         return jsonify({'Warning': 'The event you are searching for does not exist'})
 
 
-@event.route('/event/search_by_loc/<location>', methods=['GET'])
-@event.route('/event/search_by_loc/<location>/<int:page>', methods=['GET'])
+@event.route('/search', methods=['POST'])
+@event.route('/search/<int:page>', methods=['POST'])
 @token_required
-def search_by_location(current_user, location, page=1):
-    events_returned = current_user.search_event_by_location(location, page)
-    events_r = []
-    if events_returned:
-        for event in events_returned:
-            event_data = {'name': event.name, 'category': event.category, 'description': event.description}
-            events_r.append(event_data)
-        return jsonify({'Events found in this location': events_r}), 200
+def search(current_user, page=1):
+    data = request.get_json()
+    try:
+        category = data['category']
+        events_returned = current_user.search_event_by_category(category, page)
+        events_list = []
+        if events_returned:
+            for s_event in events_returned:
+                event_data = {'name': s_event.name, 'category': s_event.category, 'description': s_event.description}
+                events_list.append(event_data)
+            return jsonify({'Events belonging to this category': events_list}), 200
 
-    return jsonify({'message': 'There are no events that have been organized here so far'})
+        return jsonify({'message': 'There are no events related to this category'})
+    except KeyError:
+        try:
+            location = data['location']
+            events_returned = current_user.search_event_by_location(location, page)
+            events_list = []
+            if events_returned:
+                for s_event in events_returned:
+                    event_data = {'name': s_event.name, 'category': s_event.category,
+                                  'description': s_event.description}
+                    events_list.append(event_data)
+                return jsonify({'Events found in this location': events_list}), 200
 
-
-@event.route('/event/search_by_cat/<category>', methods=['GET'])
-@event.route('/event/search_by_cat/<category>/<int:page>', methods=['GET'])
-@token_required
-def search_by_category(current_user, category, page=1):
-    events_returned = current_user.search_event_by_category(category, page)
-    events_r = []
-    if events_returned:
-        for event in events_returned:
-            event_data = {'name': event.name, 'category': event.category, 'description': event.description}
-            events_r.append(event_data)
-        return jsonify({'Events found in this category': events_r}), 200
-
-    return jsonify({'message': 'There are no events that have been organized here so far'})
+            return jsonify({'message': 'There are no events organized in this location so far'})
+        except KeyError:
+            return jsonify({'Warning': 'Cannot comprehend the given search parameter'})
