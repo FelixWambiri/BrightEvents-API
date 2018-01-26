@@ -22,14 +22,12 @@ class AuthTestCase(unittest.TestCase):
         self.headers = {
             'Authorization': 'Basic %s' %
                              b64encode(b"felo@gmail.com:FelixWambiri12@3")
-                                 .decode("ascii")}
+                             .decode("ascii")}
         with self.app.app_context():
             self.client = self.app.test_client()
             db.session.close()
             db.drop_all()
             db.create_all()
-
-
 
     def test_registration(self):
         """Test whether user registration works correctly."""
@@ -40,8 +38,7 @@ class AuthTestCase(unittest.TestCase):
 
     def test_cannot_register_twice(self):
         """Test that a user cannot be registered twice."""
-        res = self.client.post('/api/auth/register', data=self.user_data, content_type='application/json')
-        self.assertEqual(res.status_code, 201)
+        self.client.post('/api/auth/register', data=self.user_data, content_type='application/json')
         second_res = self.client.post('/api/auth/register', data=self.user_data, content_type='application/json')
         self.assertEqual(second_res.status_code, 202)
         result = json.loads(second_res.data.decode())
