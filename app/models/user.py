@@ -135,13 +135,14 @@ class User(db.Model):
         """
         return Event.query.filter_by(owner=self.id).count()
 
-    def search_event_by_category(self, category, page):
+    def search_event_by_category(self, category):
         """This method searches an event by category and is case insensitive"""
-        return Event.query.filter(Event.category.ilike(category)).paginate(page, per_page=3, error_out=True).items
 
-    def search_event_by_location(self, location, page):
+        return Event.query.whoosh_search(category, fields=('category',)).all()
+
+    def search_event_by_location(self, location):
         """This method searches an event by location and is case insensitive"""
-        return Event.query.filter(Event.location.ilike(location)).paginate(page, per_page=3, error_out=True).items
+        return Event.query.whoosh_search(location, fields=('location',)).all()
 
     def user_reset_password(self, new_pass):
         """
