@@ -150,12 +150,14 @@ def rsvp_event(current_user, name):
 @event.route('/search', methods=['POST'])
 @event.route('/search/<int:page>', methods=['POST'])
 @token_required
-def search(current_user, page=1):
+def search(current_user):
     data = request.get_json()
     try:
         category = data['category']
-        events_returned = current_user.search_event_by_category(category, page)
+        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', category)
+        events_returned = current_user.search_event_by_category(category)
         events_list = []
+        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', events_returned)
         if events_returned:
             for s_event in events_returned:
                 event_data = {'name': s_event.name, 'category': s_event.category, 'description': s_event.description}
@@ -166,7 +168,7 @@ def search(current_user, page=1):
     except KeyError:
         try:
             location = data['location']
-            events_returned = current_user.search_event_by_location(location, page)
+            events_returned = current_user.search_event_by_location(location)
             events_list = []
             if events_returned:
                 for s_event in events_returned:
