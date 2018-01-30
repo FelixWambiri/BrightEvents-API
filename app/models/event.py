@@ -9,6 +9,7 @@ class Event(db.Model):
     """
         Create an Events table
     """
+    __searchable__ = ['category', 'location']
     __tablename__ = 'events'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), unique=True, nullable=False)
@@ -37,6 +38,7 @@ class Event(db.Model):
             raise AttributeError(
                 "You cannot make a reservation twice and you cannot make a reservation to your own event")
 
-    # Return a printable representation of Event class object
-    def __repr__(self):
-        return "<Event(name='%s',category='%s',owner='%s')>" % (self.name, self.category, self.owner)
+
+# Return a printable representation of Event class object
+def __repr__(self):
+    return "<Event(name='%s',category='%s',owner='%s')>" % (self.name, self.category, self.owner)
