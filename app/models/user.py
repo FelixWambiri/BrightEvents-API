@@ -1,4 +1,3 @@
-from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app.init_db import db
@@ -55,9 +54,10 @@ class User(db.Model):
         """
         return check_password_hash(self.pw_hash, password)
 
-    def create_event(self, name, category, location, description):
+    def create_event(self, name, category, location, date_hosted, description):
         """
         Method creates an event by first checking its existence and raising an integrity error if in existence
+        :param date_hosted:
         :param name:
         :param category:
         :param location:
@@ -65,29 +65,30 @@ class User(db.Model):
         :return:
         """
 
-        try:
-            event = Event(name=name, category=category, location=location, owner=self.id, description=description)
+        event = Event.query.filter_by(name=name).filter_by(category=category).filter_by(owner=self.id).filter_by(
+            date_hosted=date_hosted).first()
+        if not event:
+            event = Event(name=name, category=category, location=location, owner=self.id, date_hosted=date_hosted,
+                          description=description, )
             db.session.add(event)
             db.session.commit()
             return event
-        except IntegrityError:
-            db.session.rollback()
-            print('There exists an event with that name already.Please choose another name')
 
-    def update_event(self, name, new_name, category, location, description):
+    def update_event(self, event_id, name, category, location, date_hosted, description):
         """
         Method updates an event and if the field is empty it populates that field with previously stored info
+        :param event_id:
+        :param date_hosted:
         :param name:
-        :param new_name:
         :param category:
         :param location:
         :param description:
         :return:
         """
-        try:
-            event = Event.query.filter_by(name=name).filter_by(owner=self.id).first()
-            if new_name.strip():
-                event.name = new_name
+        event = Event.query.filter_by(id=event_id).filter_by(owner=self.id).first()
+        if event:
+            if name.strip():
+                event.name = name
 
             if category.strip():
                 event.category = category
@@ -95,34 +96,47 @@ class User(db.Model):
             if location.strip():
                 event.location = location
 
+            if date_hosted.strip():
+                event.date_hosted = date_hosted
+
             if description.strip():
                 event.description = description
-            db.session.commit()
-            return event
-        except AttributeError:
-            print('The event you want to update does not exist')
 
-    def delete_event(self, name):
+            if date_hosted.strip():
+                event.date_hosted = date_hosted
+
+            u_event = Event.query.filter_by(name=event.name).filter_by(category=event.category).filter_by(
+                owner=self.id).filter_by(
+                date_hosted=event.date_hosted).first()
+
+            if u_event.id != event.id:
+                return "You cannot update an event to duplicate an existing event"
+            else:
+                db.session.commit()
+                return event
+        print('The event does not exist')
+
+    def delete_event(self, event_id):
         """
         Methods deletes an event give the name of the event
-        :param name:
+        :param event_id:
         :return:
         """
-        event = Event.query.filter_by(name=name).filter_by(owner=self.id).first()
+        event = Event.query.filter_by(id=event_id).filter_by(owner=self.id).first()
         if event:
             db.session.delete(event)
             db.session.commit()
         else:
             raise AttributeError
 
-    def get_specific_event(self, name):
+    def get_specific_event(self, event_id):
         """
         This method returns a specific event when given the events name
-        :param name:
+        :param event_id:
         :return:
         """
         try:
-            event = Event.query.filter_by(name=name).filter_by(owner=self.id).first()
+            event = Event.query.filter_by(id=event_id).filter_by(owner=self.id).first()
             return event
         except AttributeError:
             print('The event you are trying to retrieve does not exist')
@@ -135,12 +149,14 @@ class User(db.Model):
         """
         return Event.query.filter_by(owner=self.id).count()
 
-    def search_event_by_category(self, category):
+    @staticmethod
+    def search_event_by_category(category):
         """This method searches an event by category and is case insensitive"""
 
         return Event.query.whoosh_search(category, fields=('category',)).all()
 
-    def search_event_by_location(self, location):
+    @staticmethod
+    def search_event_by_location(location):
         """This method searches an event by location and is case insensitive"""
         return Event.query.whoosh_search(location, fields=('location',)).all()
 
