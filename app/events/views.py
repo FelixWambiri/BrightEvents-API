@@ -1,67 +1,99 @@
 import re
+from datetime import datetime
 
-from flask import request, jsonify, abort
+from flask import request, jsonify
 
 from app.auth.views import token_required
 from app.events import event
 from app.models.event import Event
 
 
+def date_validation(date_hosted):
+    """check that the event date is not past"""
+    try:
+        date = datetime.strptime(date_hosted, '%m-%d-%Y').date()
+
+    except ValueError:
+        return "You have entered an incorrect date format, date should be MM-DD-YY format"
+
+    if date < date.today():
+        return "The event cannot have a past date as the date it is going to be hosted"
+    return date_hosted
+
+
+def data_validation(data):
+    if len(data['name'].strip()) < 5 or not re.match("^[a-zA-Z0-9_]*$", data['name'].strip()):
+        return "The event name should only contain alphanumeric characters,an underscore and be at least 5 " \
+               "characters in length without any empty spaces and special characters"
+
+    elif len(data['location'].strip()) < 3 or not data['location'].strip().isalpha():
+        return "The event location should only contain alphabetic characters and be at least 3 characters in length" \
+               " excluding empty spaces"
+
+    elif len(data['category'].strip()) < 5 or not data['category'].strip().isalpha():
+        return "The event category should only contain alphabetic characters and be at least 5 characters in length " \
+               "excluding empty spaces"
+
+    else:
+        return data
+
+
 @event.route('/events', methods=['POST'])
 @token_required
 def create_events(current_user):
     data = request.get_json()
-    name = data['name'].strip()
-    category = data['category'].strip()
-    location = data['location'].strip()
-    description = data['description'].strip()
+    name = data['name']
+    category = data['category']
+    location = data['location']
+    date_hosted = data['date_hosted']
+    description = data['description']
 
-    # Validate these fields against being empty
-    if name is None or category is None or location is None:
-        abort(400)
+    validation_output = data_validation(data)
+    date_validation_output = date_validation(data['date_hosted'])
 
-    # Validate the length of these fields to be more than five characters
-    if len(name) < 5 or len(category) < 5 or len(location) < 5:
-        return jsonify(
-            {"Warning": "Please input data that is more than five characters and do not include empty spaces"})
+    if validation_output is not data:
+        return jsonify({"message": validation_output}), 400
 
-    # Validate the name against special characters and spaces
-    if not re.match("^[a-zA-Z0-9_]*$", name):
-        return jsonify({
-            "Warning": "Invalid event name entered.The event name can contain alphanumeric characters and an underscore"
-                       "but no special characters or spaces between words,use an underscore instead"})
+    elif date_validation_output is not date_hosted:
+        return jsonify({"message": date_validation_output}), 400
 
-    # Validate the category, location and owner fields to be comprised of only alphabetic characters
-    if not category.isalpha() or not location.isalpha():
-        return jsonify({"Warning": "Invalid data entered.Please enter alphabetic characters only"})
     try:
         event_found = current_user.create_event(name=name, category=category, location=location,
+                                                date_hosted=date_hosted,
                                                 description=description)
+
         response = jsonify({"Success": "Event created successfully",
                             "event": {"name": event_found.name, "category": event_found.category,
-                                      "location": event_found.location, "description": event_found.description}})
+                                      "location": event_found.location, "date_hosted": event_found.date_hosted,
+                                      "description": event_found.description}})
 
         response.status_code = 201  # Created
         return response
     except AttributeError:
-        return jsonify({"Warning": 'The event already exists'})
+        return jsonify({"Warning": 'The event already exists'})  # Update an Event
 
 
-# Update an Event
-@event.route('/events/<string:name>', methods=['PUT'])
+@event.route('/events/<string:event_id>', methods=['PUT'])
 @token_required
-def update_events(current_user, name):
+def update_events(current_user, event_id):
     data = request.get_json()
-    new_name = data['new_name']
+    name = data['name']
     category = data['category']
     location = data['location']
+    date_hosted = data['date_hosted']
     description = data['description']
+
     try:
-        event_found = current_user.update_event(name, new_name=new_name, category=category, location=location,
+        event_found = current_user.update_event(event_id, name=name, category=category, location=location,
+                                                date_hosted=date_hosted,
                                                 description=description)
-        return jsonify({'success': 'The event has been updated successfully',
-                        "event": {"name": event_found.name, "category": event_found.category,
-                                  "location": event_found.location, "description": event_found.description}}), 200
+        if type(event_found) is str:
+            return jsonify({'Warning': "You cannot update an event to duplicate an existing event"})
+        else:
+            return jsonify({'success': 'The event has been updated successfully',
+                            "event": {"name": event_found.name, "category": event_found.category,
+                                      "location": event_found.location, "date_hosted": event_found.date_hosted,
+                                      "description": event_found.description}}), 200
 
     except AttributeError:
         response = jsonify({'warning': 'The event does not exist'})
@@ -70,11 +102,11 @@ def update_events(current_user, name):
 
 
 # Delete an event from both the personal events list and the public events list"
-@event.route('/events/<string:event_name>', methods=['DELETE'])
+@event.route('/events/<string:event_id>', methods=['DELETE'])
 @token_required
-def delete_events(current_user, event_name):
+def delete_events(current_user, event_id):
     try:
-        current_user.delete_event(event_name)
+        current_user.delete_event(event_id)
         response = jsonify({"Success": "Event deleted successfully"})
         response.status_code = 200
         return response
@@ -85,14 +117,15 @@ def delete_events(current_user, event_name):
 
 
 # Retrieves an individual event
-@event.route('/events/<event_name>', methods=['GET'])
+@event.route('/event/<event_id>', methods=['GET'])
 @token_required
-def get_user_specific_event(current_user, event_name):
+def get_user_specific_event(current_user, event_id):
     if current_user.get_number_of_events() > 0:
         try:
-            event_found = current_user.get_specific_event(event_name)
+            event_found = current_user.get_specific_event(event_id)
             return jsonify(
                 {"event": {"name": event_found.name, "category": event_found.category, "location": event_found.location,
+                           "date_hosted": event_found.date_hosted,
                            "description": event_found.description}})
         except AttributeError:
             response = jsonify({'warning': 'There is no such event'})
@@ -102,9 +135,9 @@ def get_user_specific_event(current_user, event_name):
         return jsonify({'Info': "No event created so far"})
 
 
-# Route to display all events
-@event.route('/events', methods=['GET'])
-@event.route('/api/events/<int:page>', methods=['GET'])
+# Route to display all individual events
+@event.route('/my_events', methods=['GET'])
+@event.route('/my_events/<int:page>', methods=['GET'])
 @token_required
 def get_an_individuals_all_events(current_user, page=1):
     if current_user.get_number_of_events() > 0:
@@ -118,12 +151,27 @@ def get_an_individuals_all_events(current_user, page=1):
     return jsonify({'Message': 'So far you have not created any events'})
 
 
+# Route to display all events
+@event.route('/events', methods=['GET'])
+@event.route('/events/<int:page>', methods=['GET'])
+def get_all_events(page=1):
+    if Event.query.count() > 0:
+        event_found = Event.query.paginate(page, per_page=4, error_out=True).items
+        output = []
+        for s_event in event_found:
+            event_data = {'name': s_event.name, 'category': s_event.category, 'location': s_event.location,
+                          'description': s_event.description}
+            output.append(event_data)
+        return jsonify({'events': output})
+    return jsonify({'Message': 'So far you have not created any events'})
+
+
 # Route to rsvp to an event
-@event.route('/event/<name>/rsvp', methods=['GET', 'POST'])
+@event.route('/event/<event_id>/rsvp', methods=['GET', 'POST'])
 @token_required
-def rsvp_event(current_user, name):
+def rsvp_event(current_user, event_id):
     if request.method == 'POST':
-        event_found = Event.query.filter_by(name=name).first_or_404()
+        event_found = Event.query.filter_by(id=event_id).first_or_404()
         if event_found:
             try:
                 event_found.make_rsvp(current_user)
@@ -134,7 +182,7 @@ def rsvp_event(current_user, name):
                                'reservation to your own event'}), 302
         return jsonify({'warning': 'The event you are trying to make a reservation to does not exist'})
     if request.method == 'GET':
-        event_found = Event.query.filter_by(name=name).filter_by(owner=current_user.id).first_or_404()
+        event_found = Event.query.filter_by(id=event_id).filter_by(owner=current_user.id).first_or_404()
         if event_found:
             event_rsvps = event_found.rsvps.all()
             if event_rsvps:
@@ -154,10 +202,8 @@ def search(current_user):
     data = request.get_json()
     try:
         category = data['category']
-        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', category)
         events_returned = current_user.search_event_by_category(category)
         events_list = []
-        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', events_returned)
         if events_returned:
             for s_event in events_returned:
                 event_data = {'name': s_event.name, 'category': s_event.category, 'description': s_event.description}
