@@ -18,6 +18,7 @@ class EventTestCase(unittest.TestCase):
                 'name': 'Bootcamp',
                 'category': 'Learning',
                 'location': 'Nairobi',
+                'date_hosted': '8-8-2018',
                 'description': 'This is the best learning experience'
             }
         )
@@ -26,6 +27,7 @@ class EventTestCase(unittest.TestCase):
                 'name': 'Bootcamp_21',
                 'category': 'Learning',
                 'location': 'Uganda',
+                'date_hosted': '8-8-2018',
                 'description': 'This is the best learning experience'
             }
         )
@@ -34,6 +36,7 @@ class EventTestCase(unittest.TestCase):
                 'name': 'Sepetuka',
                 'category': 'social',
                 'location': 'mombasa',
+                'date_hosted': '8-8-2018',
                 'description': 'This is the best social experience'
             }
         )
@@ -42,6 +45,7 @@ class EventTestCase(unittest.TestCase):
                 'name': 'Blaze',
                 'category': 'Cooporate',
                 'location': 'Nakuru',
+                'date_hosted': '8-8-2018',
                 'description': 'This is the best corporate experience'
             }
         )
@@ -69,15 +73,15 @@ class EventTestCase(unittest.TestCase):
         self.headers1 = {
             'Authorization': 'Basic %s' %
                              b64encode(b"felix@gmail.com:FelixWambiri12@3")
-                                 .decode("ascii")}
+                             .decode("ascii")}
         self.headers2 = {
             'Authorization': 'Basic %s' %
                              b64encode(b"test@gmail.com:TestCase12@3")
-                                 .decode("ascii")}
+                             .decode("ascii")}
         self.headers5 = {
             'Authorization': 'Basic %s' %
                              b64encode(b"test1@gmail.com:TestCase12@3")
-                                 .decode("ascii")}
+                             .decode("ascii")}
 
         with self.app.app_context():
             self.client = self.app.test_client()
@@ -119,27 +123,28 @@ class EventTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 201)
 
         # update  but no token passed
-        res_1 = self.client.put('/api/events/Bootcamp', data=json.dumps(
+        res_1 = self.client.put('/api/events/1', data=json.dumps(
             {
                 'name': 'Bootcamp',
                 'new_name': 'Bootcamp_Uganda',
                 'category': 'Learning',
                 'location': 'Uganda',
+                'date_hosted': '8-8-2018',
                 'description': 'This is the best learning experience'
             }
         ), content_type='application/json')
         self.assertIn(b'Token is missing', res_1.data)
 
         # delete event but no token passed
-        res = self.client.delete('/api/events/Bootcamp')
+        res = self.client.delete('/api/events/1')
         self.assertIn(b'Token is missing', res.data)
 
         # get one specific event
-        res_z = self.client.get('/api/events/Bootcamp')
+        res_z = self.client.get('/api/event/1')
         self.assertIn(b'Token is missing', res_z.data)
 
         # get all your events
-        result = self.client.get('/api/events')
+        result = self.client.get('/api/my_events')
         self.assertIn(b'Token is missing', result.data)
 
     def test_event_creation(self):
@@ -194,10 +199,11 @@ class EventTestCase(unittest.TestCase):
                 'name': 'B',
                 'category': 'Learning',
                 'location': 'Nairobi',
+                'date_hosted': '8-8-2018',
                 'description': 'This is the best learning experience'
             }
         ), content_type='application/json')
-        self.assertIn(b'Please input data that is more than five characters and do not include empty spaces', res.data)
+        self.assertIn(b'an underscore and be at least 5 characters in length without any empty spaces', res.data)
 
         # Name that contains special characters and spaces
         res = self.client.post('/api/events', headers=headers3, data=json.dumps(
@@ -205,21 +211,23 @@ class EventTestCase(unittest.TestCase):
                 'name': 'Bootcamp# nbo$',
                 'category': 'Learning',
                 'location': 'Nairobi',
+                'date_hosted': '8-8-2018',
                 'description': 'This is the best learning experience'
             }
         ), content_type='application/json')
-        self.assertIn(b'Invalid event name entered.', res.data)
+        self.assertIn(b'The event name should only contain alphanumeric characters,an underscore', res.data)
 
         # Location and category field containing numeric characters
         res = self.client.post('/api/events', headers=headers3, data=json.dumps(
             {
                 'name': 'Bootcamp',
                 'category': 'Learning123',
-                'location': 'Nairobi254',
+                'location': 'Nairobi',
+                'date_hosted': '8-8-2018',
                 'description': 'This is the best learning experience'
             }
         ), content_type='application/json')
-        self.assertIn(b'Invalid data entered.Please enter alphabetic characters only', res.data)
+        self.assertIn(b'The event category should only contain alphabetic characters', res.data)
 
     def test_successful_event_update(self):
         self.register_user1()
@@ -231,12 +239,12 @@ class EventTestCase(unittest.TestCase):
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
 
         # update the event
-        res_1 = self.client.put('/api/events/Bootcamp', headers=headers3, data=json.dumps(
+        res_1 = self.client.put('/api/events/1', headers=headers3, data=json.dumps(
             {
-                'name': 'Bootcamp',
-                'new_name': 'Bootcamp_Uganda',
+                'name': 'Bootcamp_Uganda',
                 'category': 'Learning',
                 'location': 'Uganda',
+                'date_hosted': '8-8-2018',
                 'description': 'This is the best learning experience'
             }
         ), content_type='application/json')
@@ -253,12 +261,12 @@ class EventTestCase(unittest.TestCase):
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
 
         # update the event but leave out the description field
-        res_1 = self.client.put('/api/events/Bootcamp', headers=headers3, data=json.dumps(
+        res_1 = self.client.put('/api/events/1', headers=headers3, data=json.dumps(
             {
-                'name': 'Bootcamp',
-                'new_name': 'Self_Learning_clinic',
-                'category': 'Learning',
+                'name': 'Self_Learning_clinic',
+                'category': '',
                 'location': 'Nairobi',
+                'date_hosted': '8-8-2018',
                 'description': ''
             }
         ), content_type='application/json')
@@ -287,12 +295,12 @@ class EventTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 201)
 
         # Second user/user2 tries to update an event belonging to the first user`s/user1
-        res_1 = self.client.put('/api/events/Bootcamp', headers=headers4, data=json.dumps(
+        res_1 = self.client.put('/api/events/1', headers=headers4, data=json.dumps(
             {
-                'name': 'Bootcamp',
-                'new_name': 'Bootcamp_Uganda',
+                'name': 'Bootcamp_Uganda',
                 'category': 'Learning',
                 'location': 'Uganda',
+                'date_hosted': '8-8-2018',
                 'description': 'This is the best learning experience'
             }
         ), content_type='application/json')
@@ -305,12 +313,12 @@ class EventTestCase(unittest.TestCase):
         access_token1 = json.loads(result.data.decode())['token']
         headers3 = {'x-access-token': access_token1}
 
-        res_1 = self.client.put('/api/events/Bootcamp', headers=headers3, data=json.dumps(
+        res_1 = self.client.put('/api/events/14', headers=headers3, data=json.dumps(
             {
-                'name': 'Bootcamp',
-                'new_name': 'Bootcamp_Uganda',
+                'name': 'Bootcamp_Uganda',
                 'category': 'Learning',
                 'location': 'Uganda',
+                'date_hosted': '8-8-2018',
                 'description': 'This is the best learning experience'
             }
         ), content_type='application/json')
@@ -326,7 +334,7 @@ class EventTestCase(unittest.TestCase):
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
 
         # delete event
-        res = self.client.delete('/api/events/Bootcamp', headers=headers3)
+        res = self.client.delete('/api/events/1', headers=headers3)
         self.assertIn(b'Event deleted successfully', res.data)
         self.assertEqual(res.status_code, 200)
 
@@ -346,7 +354,7 @@ class EventTestCase(unittest.TestCase):
         access_token2 = json.loads(result.data.decode())['token']
         headers4 = {'x-access-token': access_token2}
 
-        res_1 = self.client.delete('/api/events/Bootcamp', headers=headers4)
+        res_1 = self.client.delete('/api/events/1', headers=headers4)
         self.assertIn(b'The event does not exist', res_1.data)
 
     def test_user_cannot_delete_an_event_that_does_not_exist(self):
@@ -355,20 +363,20 @@ class EventTestCase(unittest.TestCase):
         access_token1 = json.loads(result.data.decode())['token']
         headers3 = {'x-access-token': access_token1}
 
-        res_1 = self.client.delete('/api/events/Bootcamp', headers=headers3)
+        res_1 = self.client.delete('/api/events/12', headers=headers3)
         self.assertIn(b'The event does not exist', res_1.data)
 
         # create event
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
 
         # Delete the event once
-        res = self.client.delete('/api/events/Bootcamp', headers=headers3)
+        res = self.client.delete('/api/events/1', headers=headers3)
         self.assertIn(b'Event deleted successfully', res.data)
         self.assertEqual(res.status_code, 200)
 
         # Delete the event twice
         # Test that you cannot delete event twice and that event is deleted permanently
-        res = self.client.delete('/api/events/Bootcamp', headers=headers3)
+        res = self.client.delete('/api/events/1', headers=headers3)
         self.assertIn(b'The event does not exist', res.data)
 
     def test_get_specific_event(self):
@@ -383,7 +391,7 @@ class EventTestCase(unittest.TestCase):
         # second event
         self.client.post('/api/events', headers=headers3, data=self.event2_data, content_type='application/json')
 
-        res_z = self.client.get('/api/events/Bootcamp', headers=headers3)
+        res_z = self.client.get('/api/events/1', headers=headers3)
         self.assertIn(b'Bootcamp', res_z.data)
 
     def test_cannot_get_an_event_you_have_not_created(self):
@@ -401,7 +409,7 @@ class EventTestCase(unittest.TestCase):
 
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
 
-        res_z = self.client.get('/api/events/qwerty', headers=headers4)
+        res_z = self.client.get('/api/event/3', headers=headers4)
         self.assertIn(b'No event created so far', res_z.data)
 
     def test_successful_retrieval_of_ones_overall_events(self):
@@ -419,7 +427,7 @@ class EventTestCase(unittest.TestCase):
         # Third event
         self.client.post('/api/events', headers=headers3, data=self.event3_data, content_type='application/json')
 
-        result = self.client.get('/api/events', headers=headers3)
+        result = self.client.get('/api/my_events', headers=headers3)
         events = json.loads(result.data.decode())['events']
         self.assertEqual(3, len(events))
 
@@ -447,14 +455,41 @@ class EventTestCase(unittest.TestCase):
         self.client.post('/api/events', headers=headers4, data=self.event4_data, content_type='application/json')
 
         # Test how many events returned for first user
-        result = self.client.get('/api/events', headers=headers3)
+        result = self.client.get('/api/my_events', headers=headers3)
         events1 = json.loads(result.data.decode())['events']
         self.assertEqual(2, len(events1))
 
         # Test how many events returned for second user
-        result = self.client.get('/api/events', headers=headers4)
+        result = self.client.get('/api/my_events', headers=headers4)
         events2 = json.loads(result.data.decode())['events']
         self.assertEqual(2, len(events2))
+
+    def test_successful_retrieval_of_all_events(self):
+        self.register_user1()
+        result = self.login_user1()
+        access_token1 = json.loads(result.data.decode())['token']
+        headers3 = {'x-access-token': access_token1}
+
+        # First event
+        self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
+
+        # second event
+        self.client.post('/api/events', headers=headers3, data=self.event2_data, content_type='application/json')
+
+        # Third event
+        self.client.post('/api/events', headers=headers3, data=self.event3_data, content_type='application/json')
+
+        self.register_user2()
+        result = self.login_user2()
+        access_token2 = json.loads(result.data.decode())['token']
+        headers4 = {'x-access-token': access_token2}
+
+        # Forth event from user 2
+        self.client.post('/api/events', headers=headers4, data=self.event4_data, content_type='application/json')
+
+        result = self.client.get('/api/events')
+        events = json.loads(result.data.decode())['events']
+        self.assertEqual(4, len(events))
 
     def test_make_reservation_to_an_event(self):
         # user1
@@ -472,7 +507,7 @@ class EventTestCase(unittest.TestCase):
         # First event belonging to user1
         # User2 making a reservation to the event belonging to user1
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
-        result = self.client.post('/api/event/Bootcamp/rsvp', headers=headers4)
+        result = self.client.post('/api/event/1/rsvp', headers=headers4)
         self.assertIn(b'You have made a reservation successfully', result.data)
 
     def test_that_you_cannot_make_a_reservation_twice(self):
@@ -491,11 +526,11 @@ class EventTestCase(unittest.TestCase):
         # First event belonging to user1
         # User2 making a reservation to the event belonging to user1
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
-        result = self.client.post('/api/event/Bootcamp/rsvp', headers=headers4)
+        result = self.client.post('/api/event/1/rsvp', headers=headers4)
         self.assertIn(b'You have made a reservation successfully', result.data)
 
         # Making the same reservation twice
-        result = self.client.post('/api/event/Bootcamp/rsvp', headers=headers4)
+        result = self.client.post('/api/event/1/rsvp', headers=headers4)
         self.assertIn(b'You cannot make a reservation twice', result.data)
 
     def test_that_an_event_returns_all_the_reservations(self):
@@ -521,13 +556,13 @@ class EventTestCase(unittest.TestCase):
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
 
         # User2 makes a reservation
-        self.client.post('/api/event/Bootcamp/rsvp', headers=headers4)
+        self.client.post('/api/event/1/rsvp', headers=headers4)
 
         # User3 makes a reservation
-        self.client.post('/api/event/Bootcamp/rsvp', headers=headers6)
+        self.client.post('/api/event/1/rsvp', headers=headers6)
 
         # get the reservations
-        result = self.client.get('/api/event/Bootcamp/rsvp', headers=headers3)
+        result = self.client.get('/api/event/1/rsvp', headers=headers3)
         events = json.loads(result.data.decode())['Attendants']
         self.assertEqual(2, len(events))
 
@@ -554,13 +589,13 @@ class EventTestCase(unittest.TestCase):
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
 
         # User2 makes a reservation
-        self.client.post('/api/event/Bootcamp/rsvp', headers=headers4)
+        self.client.post('/api/event/1/rsvp', headers=headers4)
 
         # User3 makes a reservation
-        self.client.post('/api/event/Bootcamp/rsvp', headers=headers6)
+        self.client.post('/api/event/1/rsvp', headers=headers6)
 
         # User3 tries to see reservations made belonging to user1 event
-        result = self.client.get('/api/event/Bootcamp/rsvp', headers=headers4)
+        result = self.client.get('/api/event/1/rsvp', headers=headers4)
         self.assertEqual(result.status_code, 404)
 
     def test_successful_event_searching_by_location(self):
