@@ -12,18 +12,20 @@ class Event(db.Model):
     __searchable__ = ['category', 'location']
     __tablename__ = 'events'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), unique=True, nullable=False)
+    name = db.Column(db.String(64), nullable=False)
     category = db.Column(db.String(64), nullable=False)
     location = db.Column(db.String(64), nullable=False)
+    date_hosted = db.Column(db.DateTime)
     description = db.Column(db.String(180), nullable=True)
     owner = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     user = db.relationship('User', back_populates='events')
 
-    def __init__(self, name, category, location, owner, description):
+    def __init__(self, name, category, location, owner, date_hosted, description):
         self.name = name
         self.category = category
         self.location = location
         self.owner = owner
+        self.date_hosted = date_hosted
         self.description = description
 
     def check_reservation(self, user):
