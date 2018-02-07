@@ -198,11 +198,11 @@ def rsvp_event(current_user, event_id):
 @event.route('/search', methods=['POST'])
 @event.route('/search/<int:page>', methods=['POST'])
 @token_required
-def search(current_user):
+def search(current_user, page=1):
     data = request.get_json()
     try:
         category = data['category']
-        events_returned = current_user.search_event_by_category(category)
+        events_returned = current_user.search_event_by_category(category, page)
         events_list = []
         if events_returned:
             for s_event in events_returned:
@@ -214,7 +214,7 @@ def search(current_user):
     except KeyError:
         try:
             location = data['location']
-            events_returned = current_user.search_event_by_location(location)
+            events_returned = current_user.search_event_by_location(location, page)
             events_list = []
             if events_returned:
                 for s_event in events_returned:
@@ -225,4 +225,17 @@ def search(current_user):
 
             return jsonify({'message': 'There are no events organized in this location so far'})
         except KeyError:
-            return jsonify({'Warning': 'Cannot comprehend the given search parameter'})
+            try:
+                name = data['name']
+                events_returned = current_user.search_event_by_name(name, page)
+                events_list = []
+                if events_returned:
+                    for s_event in events_returned:
+                        event_data = {'name': s_event.name, 'category': s_event.category,
+                                      'description': s_event.description}
+                        events_list.append(event_data)
+                    return jsonify({'The following events were found': events_list}), 200
+
+                return jsonify({'message': 'There are no events with such a name'})
+            except KeyError:
+                return jsonify({'Warning': 'Cannot comprehend the given search parameter'})
