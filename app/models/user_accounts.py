@@ -11,7 +11,8 @@ class UserAccounts:
     Creates and manages individual user accounts
     """
 
-    def create_user(self, username, email, password):
+    @staticmethod
+    def create_user(username, email, password):
         """
         Method adds a new user to the database after confirming that the user does not already exist.The email should
          be unique
@@ -29,7 +30,8 @@ class UserAccounts:
             db.session.rollback()
             print('There exists user with that email address.Please choose another email')
 
-    def get_specific_user(self, email):
+    @staticmethod
+    def get_specific_user(email):
         """
         This method should return one specific user given the email address of that user
         :param email:
@@ -43,7 +45,8 @@ class UserAccounts:
             print('The user you are trying to search does not exit ')
             return False
 
-    def delete_user(self, email):
+    @staticmethod
+    def delete_user(email):
         """
         This method deletes a specific user  given their email address
         :param email:
@@ -56,7 +59,8 @@ class UserAccounts:
         except NoResultFound:
             print("The user you are trying to delete does not exist")
 
-    def get_number_of_all_users_events(self):
+    @staticmethod
+    def get_number_of_all_users_events():
         """
         This method queries the database and returns the total number of all the events present in the database
         :return:
