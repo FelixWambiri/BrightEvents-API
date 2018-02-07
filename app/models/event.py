@@ -9,7 +9,6 @@ class Event(db.Model):
     """
         Create an Events table
     """
-    __searchable__ = ['category', 'location']
     __tablename__ = 'events'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
