@@ -3,6 +3,7 @@ import json
 from base64 import b64encode
 
 from app import create_app, db
+from app.models.user import User
 
 
 class AuthTestCase(unittest.TestCase):
@@ -19,6 +20,13 @@ class AuthTestCase(unittest.TestCase):
                 'password': 'FelixWambiri12@3'
             }
         )
+        self.user_data2 = json.dumps(
+            {
+                'username': 'Felix',
+                'email': 'felixwambiri@gmail.com',
+                'password': 'FelixWambiri12@3'
+            }
+        )
         self.headers = {
             'Authorization': 'Basic %s' %
                              b64encode(b"felo@gmail.com:FelixWambiri12@3")
@@ -28,6 +36,25 @@ class AuthTestCase(unittest.TestCase):
             db.session.close()
             db.drop_all()
             db.create_all()
+
+    def test_password_setter(self):
+        user = User('Felix', 'felixwambiri@gmail.com', 'FelixWambiri12@3')
+        self.assertTrue(user.pw_hash is not None)
+
+    def test_no_password_getter(self):
+        user = User('Felix', 'felixwambiri@gmail.com', 'FelixWambiri12@3')
+        with self.assertRaises(AttributeError):
+            user.password()
+
+    def test_password_verification(self):
+        user = User('Felix', 'felixwambiri@gmail.com', 'FelixWambiri12@3')
+        self.assertTrue(user.compare_hashed_password('FelixWambiri12@3'))
+        self.assertFalse(user.compare_hashed_password('WambiriFelix12@3'))
+
+    def test_password_salts_are_random(self):
+        user = User('Felix', 'felixwambiri@gmail.com', 'FelixWambiri12@3')
+        user2 = User('Felix', 'felixwambiri@gmail.com', 'FelixWambiri12@3')
+        self.assertTrue(user.pw_hash != user2.pw_hash)
 
     def test_registration(self):
         """Test whether user registration works correctly."""
