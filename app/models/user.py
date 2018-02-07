@@ -74,7 +74,7 @@ class User(db.Model):
             db.session.commit()
             return event
 
-    def update_event(self, event_id, name, category, location, date_hosted, description):
+    def update_event(self, event_id=None, name=None, category=None, location=None, date_hosted=None, description=None):
         """
         Method updates an event and if the field is empty it populates that field with previously stored info
         :param event_id:
@@ -101,9 +101,6 @@ class User(db.Model):
 
             if description.strip():
                 event.description = description
-
-            if date_hosted.strip():
-                event.date_hosted = date_hosted
 
             u_event = Event.query.filter_by(name=event.name).filter_by(category=event.category).filter_by(
                 owner=self.id).filter_by(
@@ -150,15 +147,21 @@ class User(db.Model):
         return Event.query.filter_by(owner=self.id).count()
 
     @staticmethod
-    def search_event_by_category(category):
-        """This method searches an event by category and is case insensitive"""
-
-        return Event.query.whoosh_search(category, fields=('category',)).all()
+    def search_event_by_name(name, page=1):
+        return Event.query.filter(Event.name.ilike("%" + name + "%")).paginate(page, per_page=4, error_out=True).items
 
     @staticmethod
-    def search_event_by_location(location):
+    def search_event_by_category(category, page=1):
+        """This method searches an event by category and is case insensitive"""
+
+        return Event.query.filter(Event.category.ilike("%" + category + "%")).paginate(page, per_page=3,
+                                                                                       error_out=True).items
+
+    @staticmethod
+    def search_event_by_location(location, page=1):
         """This method searches an event by location and is case insensitive"""
-        return Event.query.whoosh_search(location, fields=('location',)).all()
+        return Event.query.filter(Event.location.ilike("%" + location + "%")).paginate(page, per_page=4,
+                                                                                       error_out=True).items
 
     def user_reset_password(self, new_pass):
         """
