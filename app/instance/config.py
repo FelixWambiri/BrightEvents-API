@@ -6,7 +6,6 @@ class BaseConfig(object):
     # SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:AndelaFellow2017@localhost/BrightEventDb'
     SQLALCHEMY_TRACK_MODIFICATIONS = True
     SQLALCHEMY_ECHO = True
-    WHOOSH_BASE = 'whoosh'
 
 
 class TestingConfig(BaseConfig):
