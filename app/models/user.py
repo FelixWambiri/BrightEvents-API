@@ -1,3 +1,6 @@
+from datetime import date
+
+from sqlalchemy import cast, Date
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app.init_db import db
@@ -148,20 +151,23 @@ class User(db.Model):
 
     @staticmethod
     def search_event_by_name(name, page=1):
-        return Event.query.filter(Event.name.ilike("%" + name + "%")).paginate(page, per_page=4, error_out=True).items
+        return Event.query.filter(Event.name.ilike("%" + name + "%")).order_by(Event.date_hosted.desc()).paginate\
+            (page, per_page=4, error_out=True).items
 
     @staticmethod
     def search_event_by_category(category, page=1):
         """This method searches an event by category and is case insensitive"""
 
-        return Event.query.filter(Event.category.ilike("%" + category + "%")).paginate(page, per_page=3,
-                                                                                       error_out=True).items
+        return Event.query.filter(Event.category.ilike("%" + category + "%")).filter(
+            cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc()).paginate \
+            (page, per_page=3, error_out=True).items
 
     @staticmethod
     def search_event_by_location(location, page=1):
         """This method searches an event by location and is case insensitive"""
-        return Event.query.filter(Event.location.ilike("%" + location + "%")).paginate(page, per_page=4,
-                                                                                       error_out=True).items
+        return Event.query.filter(Event.location.ilike("%" + location + "%")).filter(
+            cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc()).paginate \
+            (page, per_page=3, error_out=True).items
 
     def user_reset_password(self, new_pass):
         """
