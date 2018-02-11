@@ -1,0 +1,9 @@
+Dear {{ user.username }},
+
+Welcome to BrightEvents!
+To get your password reset token please click on the following link:
+{{ url_for('auth.confirm', token=token, _external=True) }}
+
+Regards,
+
+BrightEvents management app
