@@ -1,15 +1,19 @@
 import datetime
 import re
+import socket
 from functools import wraps
+from threading import Thread
 
-from flask import request, jsonify, abort, render_template, make_response
+import os
+from flask import request, jsonify, abort, render_template, make_response, current_app
 import jwt
+from flask_mail import Message
 
+from app import mail, db
 from app.models.user import User
 from . import auth
 from app.models.user_accounts import UserAccounts
 from app.instance.config import BaseConfig
-
 
 # User accounts object
 user_accounts = UserAccounts()
@@ -20,6 +24,32 @@ user_accounts = UserAccounts()
 @auth.route('/', methods=['GET'])
 def index():
     return render_template('documentation.html')
+
+
+def password_validation(data):
+    if len(data['new_pass'].strip()) < 5 or not re.search("[a-z]", data['new_pass'].strip()) or not \
+            re.search("[0-9]", data['new_pass'].strip()) or not re.search("[A-Z]", data['new_pass'].strip()) \
+            or not re.search("[$#@]", data['new_pass'].strip()):
+        return "Invalid Password.The password must contain at least one lowercase character,one digit,one upper " \
+               "case character and one special character"
+    else:
+        return "valid Password"
+
+
+def send_async_email(app, msg):
+    with app.app_context():
+        mail.send(msg)
+
+
+def send_email(to, subject, template, **kwargs):
+    app = current_app._get_current_object()
+    msg = Message(subject, sender=os.environ.get('MAIL_USERNAME'), recipients=[to])
+    msg.body = render_template(template + '.txt', **kwargs)
+    msg.html = render_template(template + '.html', **kwargs)
+    mail.send(msg)
+    thr = Thread(target=send_async_email, args=[app, msg])
+    thr.start()
+    return thr
 
 
 # Registration route
@@ -105,22 +135,78 @@ def token_required(f):
     return decorated
 
 
+@auth.route('/acquire_token', methods=['POST'])
+def acquire_token():
+    """
+    Method generates the confirmation token for password reset and sends that email to the user email
+    :return:
+    """
+    data = request.get_json()
+    user = User.query.filter_by(email=data['email']).first()
+    if user:
+        token = user.generate_confirmation_token()
+        try:
+            send_email(user.email, 'Confirm Your Account', 'auth/email/confirm', user=user, token=token)
+            response = {"message": "a confirmation email has been sent to {}".format(user.email)}
+            return make_response(jsonify(response)), 200
+        except socket.gaierror:
+            return jsonify({'Error': 'Sorry an error has been encountered while sending you a confirmation link.'
+                                     'Check your internet connection first it may be the reason'})
+    return jsonify({"Info": "There does not exist a user by that email address"}), 404
+
+
+@auth.route('/confirm/<token>')
+def confirm(token):
+    """This route contains the token that will be used to reset password"""
+    res = User.confirm(token)
+    if res == False:
+        return jsonify({"message": res}), 403
+    return jsonify({"message": "Extract the token below and go ahead to reset your password", "token": token}), 200
+
+
+@auth.route('/reset_password', methods=['PUT'])
+def reset_password():
+    """
+    This route resets the password and takes the token received in rhe email and the new password
+    :return:
+    """
+    data = request.get_json()
+    try:
+        token = data['token']
+    except KeyError:
+        return jsonify({"Info": "Please input the token received in your email and your new password"}),
+    res = User.confirm(token)
+    if res == False:
+        return jsonify({"message": res}), 403
+    user = res
+    new_pass = password_validation(data)
+
+    if new_pass != "valid Password":
+        return jsonify({"message": new_pass}), 400
+    user.pw_hash = data["new_pass"]
+    db.session.commit()
+    return jsonify({"message": "The password was reset successfully,Now you can proceed to login"}), 200
+
+
 # Route to reset password
-@auth.route('/reset-password', methods=['POST'])
+@auth.route('/change-password', methods=['PUT'])
 @token_required
-def reset_password(current_user):
+def change_password(current_user):
+    """
+    This route changes the password
+    :param current_user:
+    :return:
+    """
     data = request.get_json()
     previous_password = data['previous_password']
-    new_password = data['new_password'].strip()
-
-    if len(new_password) < 5:
-        return jsonify({"Warning": "This fields must be more than 5 characters and not empty spaces"})
+    new_pass = password_validation(data)
+    if new_pass != "valid Password":
+        return jsonify({"message": new_pass}), 400
 
     if current_user.compare_hashed_password(previous_password):
-        current_user.user_reset_password(new_password)
+        current_user.change_password(new_pass)
         response = jsonify({'success': 'The password has been updated successfully'})
         response.status_code = 200
         return response
     else:
         return jsonify({'warning': 'Please try to remember you previous password'})
-
