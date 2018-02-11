@@ -1,5 +1,7 @@
 from datetime import date
 
+from flask import current_app
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from sqlalchemy import cast, Date
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -28,6 +30,7 @@ class User(db.Model):
     username = db.Column(db.String(64), index=True, nullable=False)
     email = db.Column(db.String(64), index=True, unique=True, nullable=False)
     pw_hash = db.Column(db.String(100))
+    confirmed = db.Column(db.Boolean, default=False)
     events = db.relationship('Event', back_populates='user')
     ind_rsvps = db.relationship('Event', secondary=rsvps, backref=db.backref('rsvps', lazy='dynamic'))
 
@@ -56,6 +59,21 @@ class User(db.Model):
         To verify if the hashed password matches the actual password
         """
         return check_password_hash(self.pw_hash, password)
+
+    def generate_confirmation_token(self, expiration=3600):
+        s = Serializer(current_app.config['SECRET_KEY'], expiration)
+        return s.dumps({'confirm': self.id})
+
+    @staticmethod
+    def confirm(token):
+        s = Serializer(current_app.config['SECRET_KEY'])
+
+        try:
+            data = s.loads(token)
+        except Exception:
+            return False
+        user = User.query.filter_by(id=data.get('confirm')).first()
+        return user
 
     def create_event(self, name, category, location, date_hosted, description):
         """
@@ -151,25 +169,26 @@ class User(db.Model):
 
     @staticmethod
     def search_event_by_name(name, page=1):
-        return Event.query.filter(Event.name.ilike("%" + name + "%")).order_by(Event.date_hosted.desc()).paginate\
-            (page, per_page=4, error_out=True).items
+        return \
+            Event.query.filter(Event.name.ilike("%" + name + "%")).order_by(Event.date_hosted.desc()). \
+            paginate(page, per_page=4, error_out=True).items
 
     @staticmethod
     def search_event_by_category(category, page=1):
         """This method searches an event by category and is case insensitive"""
-
         return Event.query.filter(Event.category.ilike("%" + category + "%")).filter(
-            cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc()).paginate \
-            (page, per_page=3, error_out=True).items
+            cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc()).\
+            paginate(page,  per_page=3, error_out=True).items
 
     @staticmethod
     def search_event_by_location(location, page=1):
         """This method searches an event by location and is case insensitive"""
         return Event.query.filter(Event.location.ilike("%" + location + "%")).filter(
-            cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc()).paginate \
-            (page, per_page=3, error_out=True).items
+            cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc()).paginate(page, per_page=3,
+                                                                                                       error_out=True).\
+            items
 
-    def user_reset_password(self, new_pass):
+    def change_password(self, new_pass):
         """
         Method to reset the password to a new value
         :param new_pass:
@@ -177,6 +196,8 @@ class User(db.Model):
         """
         pass_hash = generate_password_hash(new_pass)
         self.pw_hash = pass_hash
+        db.session.add(self)
+        db.session.commit()
 
     def __repr__(self):
         return '<User %r>' % self.username
