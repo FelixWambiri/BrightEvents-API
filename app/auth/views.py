@@ -33,7 +33,7 @@ def password_validation(data):
         return "Invalid Password.The password must contain at least one lowercase character,one digit,one upper " \
                "case character and one special character"
     else:
-        return "valid Password"
+        return data['new_pass']
 
 
 def send_async_email(app, msg):
@@ -181,7 +181,7 @@ def reset_password():
     user = res
     new_pass = password_validation(data)
 
-    if new_pass != "valid Password":
+    if new_pass is not data['new_pass']:
         return jsonify({"message": new_pass}), 400
     user.pw_hash = data["new_pass"]
     db.session.commit()
@@ -200,7 +200,7 @@ def change_password(current_user):
     data = request.get_json()
     previous_password = data['previous_password']
     new_pass = password_validation(data)
-    if new_pass != "valid Password":
+    if new_pass is not data['new_pass']:
         return jsonify({"message": new_pass}), 400
 
     if current_user.compare_hashed_password(previous_password):
