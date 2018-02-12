@@ -21,6 +21,20 @@ def date_validation(date_hosted):
     return date_hosted
 
 
+def update_date_validation(date_hosted):
+    """check that the event date is not past"""
+    if len(date_hosted) > 3:
+        try:
+            date = datetime.strptime(date_hosted, '%m-%d-%Y').date()
+
+        except ValueError:
+            return "You have entered an incorrect date format, date should be MM-DD-YY format"
+
+        if date < date.today():
+            return "The event cannot have a past date as the date it is going to be hosted"
+    return date_hosted
+
+
 def data_validation(data):
     if len(data['name'].strip()) < 5 or not re.match("^[a-zA-Z0-9_]*$", data['name'].strip()):
         return "The event name should only contain alphanumeric characters,an underscore and be at least 5 " \
@@ -36,6 +50,23 @@ def data_validation(data):
 
     else:
         return data
+
+
+def update_data_validation(data):
+    if data['name'] != '':
+        if not re.match("^[a-zA-Z0-9_]*$", data['name']) or len(data['name']) < 5:
+            return "The event name should only contain alphanumeric characters,an underscore and be at least 5 " \
+                   "characters in length without any empty spaces and special characters"
+    if data['location'] != '':
+        if not data['location'].isalpha() and len(data['location']) < 3:
+            return "The event location should only contain alphabetic characters and be at least 3 characters in length" \
+                   " excluding empty spaces"
+
+    if data['category'] != '':
+        if not data['category'].isalpha() or len(data['category']) < 5:
+            return "The event category should only contain alphabetic characters and be at least 5 characters in " \
+                   "length excluding empty spaces"
+    return data
 
 
 @event.route('/events', methods=['POST'])
@@ -82,6 +113,15 @@ def update_events(current_user, event_id):
     location = data['location']
     date_hosted = data['date_hosted']
     description = data['description']
+    if name != '' or category != '' or location != '' or date_hosted != '' or description != '':
+        validation_output = update_data_validation(data)
+        date_validation_output = update_date_validation(data['date_hosted'])
+
+        if validation_output is not data:
+            return jsonify({"message": validation_output}), 400
+
+        elif date_validation_output is not date_hosted:
+            return jsonify({"message": date_validation_output}), 400
 
     try:
         event_found = current_user.update_event(event_id, name=name, category=category, location=location,
