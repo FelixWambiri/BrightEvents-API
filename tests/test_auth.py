@@ -2,6 +2,8 @@ import unittest
 import json
 from base64 import b64encode
 
+import time
+
 from app import create_app, db
 from app.models.user import User
 
@@ -30,7 +32,7 @@ class AuthTestCase(unittest.TestCase):
         self.headers = {
             'Authorization': 'Basic %s' %
                              b64encode(b"felo@gmail.com:FelixWambiri12@3")
-                             .decode("ascii")}
+                                 .decode("ascii")}
         with self.app.app_context():
             self.client = self.app.test_client()
             db.session.close()
@@ -130,6 +132,20 @@ class AuthTestCase(unittest.TestCase):
                              b64encode(b"felo@gmail.com:FelixWambiri12@3456")
                                  .decode("ascii")}, content_type='application/json')
         self.assertIn(b'Invalid Credentials', res_1.data)
+
+    def test_valid_logout(self):
+        """Test for logout before token expiration"""
+        # User registration
+        self.client.post('/api/auth/register', data=self.user_data, content_type='application/json')
+        # User login
+        result = self.client.post("/api/auth/login", headers=self.headers, content_type='application/json')
+        access_token = json.loads(result.data.decode())['token']
+        header = {'x-access-token': access_token}
+        # Valid token logout
+        res = self.client.post("/api/auth/logout", headers=header, content_type='application/json')
+        data = json.loads(res.data.decode())
+        self.assertIn("Successfully logged out", str(data))
+        self.assertEqual(res.status_code, 200)
 
     def tearDown(self):
         db.session.remove()
