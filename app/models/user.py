@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from flask import current_app
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
@@ -10,10 +10,6 @@ from app.models.event import Event
 
 
 class User(db.Model):
-    """
-    Blue print for creating the user of the app
-    With all their attributes and methods
-    """
     """
     Create a Rsvp table to show which events a user has made a reservation to
     This table user a many to many relationship
@@ -30,7 +26,6 @@ class User(db.Model):
     username = db.Column(db.String(64), index=True, nullable=False)
     email = db.Column(db.String(64), index=True, unique=True, nullable=False)
     pw_hash = db.Column(db.String(100))
-    confirmed = db.Column(db.Boolean, default=False)
     events = db.relationship('Event', back_populates='user')
     ind_rsvps = db.relationship('Event', secondary=rsvps, backref=db.backref('rsvps', lazy='dynamic'))
 
@@ -171,21 +166,21 @@ class User(db.Model):
     def search_event_by_name(name, page=1):
         return \
             Event.query.filter(Event.name.ilike("%" + name + "%")).order_by(Event.date_hosted.desc()). \
-            paginate(page, per_page=4, error_out=True).items
+                paginate(page, per_page=4, error_out=True).items
 
     @staticmethod
     def search_event_by_category(category, page=1):
         """This method searches an event by category and is case insensitive"""
         return Event.query.filter(Event.category.ilike("%" + category + "%")).filter(
-            cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc()).\
-            paginate(page,  per_page=3, error_out=True).items
+            cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc()). \
+            paginate(page, per_page=3, error_out=True).items
 
     @staticmethod
     def search_event_by_location(location, page=1):
         """This method searches an event by location and is case insensitive"""
         return Event.query.filter(Event.location.ilike("%" + location + "%")).filter(
             cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc()).paginate(page, per_page=3,
-                                                                                                       error_out=True).\
+                                                                                                       error_out=True). \
             items
 
     def change_password(self, new_pass):
@@ -201,3 +196,29 @@ class User(db.Model):
 
     def __repr__(self):
         return '<User %r>' % self.username
+
+
+class BlacklistToken(db.Model):
+    """
+    Token Model storing blacklisted tokens
+    """
+    __tablename__ = 'blacklist_tokens'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    token = db.Column(db.String(500), unique=True, nullable=False)
+    blacklisted_on = db.Column(db.DateTime, nullable=False, default=datetime.utcnow())
+
+    def __init__(self, token):
+        self.token = token
+
+    @staticmethod
+    def check_blacklist(auth_token):
+        # check if auth token is blacklisted
+        res = BlacklistToken.query.filter_by(token=str(auth_token)).first()
+        if res:
+            return True
+        else:
+            return False
+
+    def __repr__(self):
+        return '<id: token: {}'.format(self.token)
