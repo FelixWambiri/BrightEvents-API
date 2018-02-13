@@ -10,7 +10,7 @@ import jwt
 from flask_mail import Message
 
 from app import mail, db
-from app.models.user import User
+from app.models.user import User, BlacklistToken
 from . import auth
 from app.models.user_accounts import UserAccounts
 from app.instance.config import BaseConfig
@@ -82,7 +82,7 @@ def register():
     # Validate the password to comprised of certain characters to make it more stronger and secure
     if not re.search("[a-z]", password) or not re.search("[0-9]", password) or not re.search("[A-Z]",
                                                                                              password) or not re.search(
-            "[$#@]", password):
+        "[$#@]", password):
         return jsonify({
             "Warning": "Invalid Password.The password must contain at least one lowercase character,one digit,"
                        "one upper case character and one special character"})
@@ -188,7 +188,7 @@ def reset_password():
     return jsonify({"message": "The password was reset successfully,Now you can proceed to login"}), 200
 
 
-# Route to reset password
+# Route to change password
 @auth.route('/change-password', methods=['PUT'])
 @token_required
 def change_password(current_user):
@@ -210,3 +210,26 @@ def change_password(current_user):
         return response
     else:
         return jsonify({'warning': 'Please try to remember you previous password'})
+
+
+# Route to logout
+@auth.route('/logout', methods=['POST'])
+@token_required
+def logout(current_user):
+    token = request.headers.get('x-access-token')
+    if token:
+        data = jwt.decode(token, BaseConfig.SECRET_KEY)
+        if not isinstance(data, str) and not BlacklistToken.check_blacklist(token):
+            # mark the token as blacklisted
+            blacklist_token = BlacklistToken(token=token)
+            try:
+                # insert the token
+                db.session.add(blacklist_token)
+                db.session.commit()
+                return jsonify({'status': 'success', 'message': 'Successfully logged out.'}), 200
+            except Exception as e:
+                return jsonify({'status': 'fail', 'message': e}), 200
+        else:
+            return jsonify({'status': 'fail', 'message': data}), 401
+    else:
+        return jsonify({'status': 'fail', 'message': 'Provide a valid token.'}), 403
