@@ -166,7 +166,7 @@ class User(db.Model):
     def search_event_by_name(name, page=1):
         return \
             Event.query.filter(Event.name.ilike("%" + name + "%")).order_by(Event.date_hosted.desc()). \
-                paginate(page, per_page=4, error_out=True).items
+            paginate(page, per_page=4, error_out=True).items
 
     @staticmethod
     def search_event_by_category(category, page=1):
@@ -180,7 +180,7 @@ class User(db.Model):
         """This method searches an event by location and is case insensitive"""
         return Event.query.filter(Event.location.ilike("%" + location + "%")).filter(
             cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc()).paginate(page, per_page=3,
-                                                                                                       error_out=True). \
+                                                                                                       error_out=True).\
             items
 
     def change_password(self, new_pass):
@@ -212,9 +212,9 @@ class BlacklistToken(db.Model):
         self.token = token
 
     @staticmethod
-    def check_blacklist(auth_token):
+    def check_blacklist(token):
         # check if auth token is blacklisted
-        res = BlacklistToken.query.filter_by(token=str(auth_token)).first()
+        res = BlacklistToken.query.filter_by(token=str(token)).first()
         if res:
             return True
         else:
