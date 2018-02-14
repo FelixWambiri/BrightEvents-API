@@ -11,6 +11,7 @@ class EventTestCase(unittest.TestCase):
 
     def setUp(self):
         """Set up reusable test variables."""
+
         self.app = create_app(config_name='testing')
         self.app.app_context().push()
         self.event1_data = json.dumps(
@@ -596,7 +597,7 @@ class EventTestCase(unittest.TestCase):
 
         # User3 tries to see reservations made belonging to user1 event
         result = self.client.get('/api/event/1/rsvp', headers=headers4)
-        self.assertEqual(result.status_code, 404)
+        self.assertEqual(result.status_code, 401)
 
     def test_successful_event_searching_by_location(self):
         # user1
