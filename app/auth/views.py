@@ -82,7 +82,7 @@ def register():
     # Validate the password to comprised of certain characters to make it more stronger and secure
     if not re.search("[a-z]", password) or not re.search("[0-9]", password) or not re.search("[A-Z]",
                                                                                              password) or not re.search(
-        "[$#@]", password):
+            "[$#@]", password):
         return jsonify({
             "Warning": "Invalid Password.The password must contain at least one lowercase character,one digit,"
                        "one upper case character and one special character"})
@@ -126,11 +126,13 @@ def token_required(f):
             return jsonify({'message': 'Token is missing'}), 401
         try:
             data = jwt.decode(token, BaseConfig.SECRET_KEY)
-            current_user = User.query.filter_by(id=data['id']).first()
+            if not isinstance(data, str) and not BlacklistToken.check_blacklist(token):
+                current_user = User.query.filter_by(id=data['id']).first()
+                return f(current_user, *args, **kwargs)
+            return jsonify({"message": "Please login again to continue"}), 401
+
         except:
             return jsonify({'message': 'Token is invalid'}), 401
-
-        return f(current_user, *args, **kwargs)
 
     return decorated
 
