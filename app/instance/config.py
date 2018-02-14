@@ -7,7 +7,7 @@ class BaseConfig(object):
     CSRF_ENABLED = False
     SECRET_KEY = os.getenv('SECRET_KEY')
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URI')
-    SQLALCHEMY_TRACK_MODIFICATIONS = True
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = True
     MAIL_SERVER = 'smtp.googlemail.com'
     MAIL_PORT = 465
