@@ -219,7 +219,7 @@ def rsvp_event(current_user, event_id):
             except AttributeError:
                 return jsonify({
                     'warning': 'You cannot make a reservation twice and you cannot make a '
-                               'reservation to your own event'}), 302
+                               'reservation to your own event'}), 403 # forbidden
         return jsonify({'warning': 'The event you are trying to make a reservation to does not exist'})
     if request.method == 'GET':
         event_found = Event.query.filter_by(id=event_id).filter_by(owner=current_user.id).first_or_404()
