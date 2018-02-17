@@ -185,7 +185,8 @@ def get_an_individuals_all_events(current_user, page=1):
         output = []
         for s_event in event_found:
             event_data = {'name': s_event.name, 'category': s_event.category, 'location': s_event.location,
-                          'description': s_event.description}
+                          'date_hosted':
+                              s_event.date_hosted, 'description': s_event.description}
             output.append(event_data)
         return jsonify({'events': output})
     return jsonify({'Message': 'So far you have not created any events'})
@@ -200,10 +201,11 @@ def get_all_events(page=1):
         output = []
         for s_event in event_found:
             event_data = {'name': s_event.name, 'category': s_event.category, 'location': s_event.location,
-                          'description': s_event.description}
+                          'date_hosted':
+                              s_event.date_hosted, 'description': s_event.description}
             output.append(event_data)
         return jsonify({'events': output})
-    return jsonify({'Message': 'So far you have not created any events'})
+    return jsonify({'Message': 'So far no events have been created'})
 
 
 # Route to rsvp to an event
@@ -219,7 +221,7 @@ def rsvp_event(current_user, event_id):
             except AttributeError:
                 return jsonify({
                     'warning': 'You cannot make a reservation twice and you cannot make a '
-                               'reservation to your own event'}), 403 # forbidden
+                               'reservation to your own event'}), 403  # forbidden
         return jsonify({'warning': 'The event you are trying to make a reservation to does not exist'})
     if request.method == 'GET':
         event_found = Event.query.filter_by(id=event_id).filter_by(owner=current_user.id).first_or_404()
@@ -246,7 +248,8 @@ def search(current_user, page=1):
         events_list = []
         if events_returned:
             for s_event in events_returned:
-                event_data = {'name': s_event.name, 'category': s_event.category, 'description': s_event.description}
+                event_data = {'name': s_event.name, 'category': s_event.category, 'location': s_event.location,
+                              'date_hosted': s_event.date_hosted, 'description': s_event.description}
                 events_list.append(event_data)
             return jsonify({'Events belonging to this category': events_list}), 200
 
@@ -258,8 +261,8 @@ def search(current_user, page=1):
             events_list = []
             if events_returned:
                 for s_event in events_returned:
-                    event_data = {'name': s_event.name, 'category': s_event.category,
-                                  'description': s_event.description}
+                    event_data = {'name': s_event.name, 'category': s_event.category, 'location': s_event.location,
+                                  'date_hosted': s_event.date_hosted, 'description': s_event.description}
                     events_list.append(event_data)
                 return jsonify({'Events found in this location': events_list}), 200
 
@@ -271,8 +274,8 @@ def search(current_user, page=1):
                 events_list = []
                 if events_returned:
                     for s_event in events_returned:
-                        event_data = {'name': s_event.name, 'category': s_event.category,
-                                      'description': s_event.description}
+                        event_data = {'name': s_event.name, 'category': s_event.category, 'location': s_event.location,
+                                      'date_hosted': s_event.date_hosted, 'description': s_event.description}
                         events_list.append(event_data)
                     return jsonify({'The following events were found': events_list}), 200
 
