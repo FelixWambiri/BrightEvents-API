@@ -59,8 +59,8 @@ def update_data_validation(data):
                    "characters in length without any empty spaces and special characters"
     if data['location'] != '':
         if not data['location'].isalpha() and len(data['location']) < 3:
-            return "The event location should only contain alphabetic characters and be at least 3 characters in length" \
-                   " excluding empty spaces"
+            return "The event location should only contain alphabetic characters and be at least 3 characters in" \
+                   " length excluding empty spaces"
 
     if data['category'] != '':
         if not data['category'].isalpha() or len(data['category']) < 5:
@@ -177,11 +177,11 @@ def get_user_specific_event(current_user, event_id):
 
 # Route to display all individual events
 @event.route('/my_events', methods=['GET'])
-@event.route('/my_events/<int:page>', methods=['GET'])
+@event.route('/my_events/page=<int:page>&limit=<int:limit>', methods=['GET'])
 @token_required
-def get_an_individuals_all_events(current_user, page=1):
+def get_an_individuals_all_events(current_user, limit=4, page=1):
     if current_user.get_number_of_events() > 0:
-        event_found = Event.query.filter_by(owner=current_user.id).paginate(page, per_page=3, error_out=True).items
+        event_found = Event.query.filter_by(owner=current_user.id).paginate(page, per_page=limit, error_out=True).items
         output = []
         for s_event in event_found:
             event_data = {'name': s_event.name, 'category': s_event.category, 'location': s_event.location,
@@ -194,10 +194,11 @@ def get_an_individuals_all_events(current_user, page=1):
 
 # Route to display all events
 @event.route('/events', methods=['GET'])
-@event.route('/events/<int:page>', methods=['GET'])
-def get_all_events(page=1):
+@event.route('/events', methods=['GET'])
+@event.route('/events/page=<int:page>&limit=<int:limit>', methods=['GET'])
+def get_all_events(limit=4, page=1):
     if Event.query.count() > 0:
-        event_found = Event.query.paginate(page, per_page=4, error_out=True).items
+        event_found = Event.query.paginate(page, per_page=limit).items
         output = []
         for s_event in event_found:
             event_data = {'name': s_event.name, 'category': s_event.category, 'location': s_event.location,
@@ -238,13 +239,15 @@ def rsvp_event(current_user, event_id):
 
 
 @event.route('/search', methods=['POST'])
-@event.route('/search/<int:page>', methods=['POST'])
+@event.route('/search/page=<int:page>&limit=<int:limit>', methods=['POST'])
+@event.route('/search/page=<int:page>', methods=['POST'])
 @token_required
-def search(current_user, page=1):
+def search(current_user, limit=9, page=1):
     data = request.get_json()
     try:
         category = data['category']
-        events_returned = current_user.search_event_by_category(category, page)
+        events_returned = current_user.search_event_by_category(category).paginate(page, per_page=limit,
+                                                                                   error_out=True).items
         events_list = []
         if events_returned:
             for s_event in events_returned:
@@ -257,7 +260,8 @@ def search(current_user, page=1):
     except KeyError:
         try:
             location = data['location']
-            events_returned = current_user.search_event_by_location(location, page)
+            events_returned = current_user.search_event_by_location(location).paginate(page, per_page=limit,
+                                                                                       error_out=True).items
             events_list = []
             if events_returned:
                 for s_event in events_returned:
@@ -270,7 +274,8 @@ def search(current_user, page=1):
         except KeyError:
             try:
                 name = data['name']
-                events_returned = current_user.search_event_by_name(name, page)
+                events_returned = current_user.search_event_by_name(name).paginate(page, per_page=limit,
+                                                                                   error_out=True).items
                 events_list = []
                 if events_returned:
                     for s_event in events_returned:
