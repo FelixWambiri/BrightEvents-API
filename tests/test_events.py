@@ -392,7 +392,7 @@ class EventTestCase(unittest.TestCase):
         # second event
         self.client.post('/api/events', headers=headers3, data=self.event2_data, content_type='application/json')
 
-        res_z = self.client.get('/api/events/1', headers=headers3)
+        res_z = self.client.get('/api/event/1', headers=headers3)
         self.assertIn(b'Bootcamp', res_z.data)
 
     def test_cannot_get_an_event_you_have_not_created(self):
