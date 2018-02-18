@@ -131,7 +131,11 @@ def token_required(f):
                 return f(current_user, *args, **kwargs)
             return jsonify({"message": "Please login again to continue"}), 401
 
-        except:
+        except KeyError:
+            return jsonify({
+                'message': 'Please check to see if you have entered all the attributes needed to'
+                           ' create an event.A certain Key seems to be missing'}), 500
+        except Exception:
             return jsonify({'message': 'Token is invalid'}), 401
 
     return decorated
