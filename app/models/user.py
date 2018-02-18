@@ -163,25 +163,20 @@ class User(db.Model):
         return Event.query.filter_by(owner=self.id).count()
 
     @staticmethod
-    def search_event_by_name(name, page=1):
-        return \
-            Event.query.filter(Event.name.ilike("%" + name + "%")).order_by(Event.date_hosted.desc()). \
-            paginate(page, per_page=4, error_out=True).items
+    def search_event_by_name(name):
+        return Event.query.filter(Event.name.ilike("%" + name + "%")).order_by(Event.date_hosted.desc())
 
     @staticmethod
-    def search_event_by_category(category, page=1):
+    def search_event_by_category(category):
         """This method searches an event by category and is case insensitive"""
         return Event.query.filter(Event.category.ilike("%" + category + "%")).filter(
-            cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc()). \
-            paginate(page, per_page=3, error_out=True).items
+            cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc())
 
     @staticmethod
-    def search_event_by_location(location, page=1):
+    def search_event_by_location(location):
         """This method searches an event by location and is case insensitive"""
         return Event.query.filter(Event.location.ilike("%" + location + "%")).filter(
-            cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc()).paginate(page, per_page=3,
-                                                                                                       error_out=True).\
-            items
+            cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc())
 
     def change_password(self, new_pass):
         """
