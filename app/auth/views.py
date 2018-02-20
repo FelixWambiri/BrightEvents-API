@@ -8,6 +8,7 @@ import os
 from flask import request, jsonify, abort, render_template, make_response, current_app
 import jwt
 from flask_mail import Message
+from werkzeug.security import generate_password_hash
 
 from app import mail, db
 from app.models.user import User, BlacklistToken
@@ -70,7 +71,7 @@ def register():
         return jsonify({"Warning": "This fields must be more than 5 characters and not empty spaces"})
 
     # Validate the username against special characters and spaces
-    if not re.match("^[a-zA-Z0-9_]*$", username):
+    if not re.match("^[a-zA-Z0-9_ ]*$", username):
         return jsonify({
             "Warning": "Invalid username.The username can contain letters, digits and underscore but no special"
                        " characters or space"})
@@ -129,12 +130,14 @@ def token_required(f):
             if not isinstance(data, str) and not BlacklistToken.check_blacklist(token):
                 current_user = User.query.filter_by(id=data['id']).first()
                 return f(current_user, *args, **kwargs)
-            return jsonify({"message": "Please login again to continue"}), 401
+            return jsonify({"message": "You are logged out. Please login again to continue"}), 401
 
         except KeyError:
             return jsonify({
-                'message': 'Please check to see if you have entered all the attributes needed to'
-                           ' create an event.A certain Key seems to be missing'}), 500
+                'A warning': 'An error was encountered while performing your request.There could be two reasons'
+                             ' as to why',
+                'Token Error': 'Token is invalid, You are using the Reset Password Token to perform the request',
+                'Key Error': 'Please check to see if you have entered all the attributes needed to perform this request'}), 500
         except Exception:
             return jsonify({'message': 'Token is invalid'}), 401
 
@@ -189,7 +192,8 @@ def reset_password():
 
     if new_pass is not data['new_pass']:
         return jsonify({"message": new_pass}), 400
-    user.pw_hash = data["new_pass"]
+    # new_pass = data["new_pass"]
+    user.pw_hash = generate_password_hash(data["new_pass"])
     db.session.commit()
     return jsonify({"message": "The password was reset successfully,Now you can proceed to login"}), 200
 
