@@ -36,7 +36,7 @@ def update_date_validation(date_hosted):
 
 
 def data_validation(data):
-    if len(data['name'].strip()) < 5 or not re.match("^[a-zA-Z0-9_]*$", data['name'].strip()):
+    if len(data['name'].strip()) < 5 or not re.match("^[a-zA-Z0-9_ ]*$", data['name'].strip()):
         return "The event name should only contain alphanumeric characters,an underscore and be at least 5 " \
                "characters in length without any empty spaces and special characters"
 
@@ -54,7 +54,7 @@ def data_validation(data):
 
 def update_data_validation(data):
     if data['name'] != '':
-        if not re.match("^[a-zA-Z0-9_]*$", data['name']) or len(data['name']) < 5:
+        if not re.match("^[a-zA-Z0-9_ ]*$", data['name']) or len(data['name']) < 5:
             return "The event name should only contain alphanumeric characters,an underscore and be at least 5 " \
                    "characters in length without any empty spaces and special characters"
     if data['location'] != '':
@@ -172,41 +172,46 @@ def get_user_specific_event(current_user, event_id):
             response.status_code = 404  # Not found
             return response
     else:
-        return jsonify({'Info': "No event created so far"})
+        return jsonify({'Info': "No Events Found"})
 
 
 # Route to display all individual events
 @event.route('/my_events', methods=['GET'])
+@event.route('/my_events/page=<int:page>', methods=['GET'])
 @event.route('/my_events/page=<int:page>&limit=<int:limit>', methods=['GET'])
 @token_required
 def get_an_individuals_all_events(current_user, limit=4, page=1):
     if current_user.get_number_of_events() > 0:
-        event_found = Event.query.filter_by(owner=current_user.id).paginate(page, per_page=limit, error_out=True).items
+        event_found = Event.query.filter_by(owner=current_user.id).paginate(page, per_page=limit, error_out=False).items
         output = []
-        for s_event in event_found:
-            event_data = {'name': s_event.name, 'category': s_event.category, 'location': s_event.location,
-                          'date_hosted':
-                              s_event.date_hosted, 'description': s_event.description}
-            output.append(event_data)
-        return jsonify({'events': output})
-    return jsonify({'Message': 'So far you have not created any events'})
+        if event_found:
+            for s_event in event_found:
+                event_data = {'name': s_event.name, 'category': s_event.category, 'location': s_event.location,
+                              'date_hosted':
+                                  s_event.date_hosted, 'description': s_event.description}
+                output.append(event_data)
+            return jsonify({'events': output})
+        return jsonify({'Message': 'No Events Found'}), 404
+    return jsonify({'Message': 'No Events Found'}), 404
 
 
 # Route to display all events
 @event.route('/events', methods=['GET'])
-@event.route('/events', methods=['GET'])
+@event.route('/events/page=<int:page>', methods=['GET'])
 @event.route('/events/page=<int:page>&limit=<int:limit>', methods=['GET'])
 def get_all_events(limit=4, page=1):
     if Event.query.count() > 0:
-        event_found = Event.query.paginate(page, per_page=limit).items
+        event_found = Event.query.paginate(page, per_page=limit, error_out=False).items
         output = []
-        for s_event in event_found:
-            event_data = {'name': s_event.name, 'category': s_event.category, 'location': s_event.location,
-                          'date_hosted':
-                              s_event.date_hosted, 'description': s_event.description}
-            output.append(event_data)
-        return jsonify({'events': output})
-    return jsonify({'Message': 'So far no events have been created'})
+        if event_found:
+            for s_event in event_found:
+                event_data = {'name': s_event.name, 'category': s_event.category, 'location': s_event.location,
+                              'date_hosted':
+                                  s_event.date_hosted, 'description': s_event.description}
+                output.append(event_data)
+            return jsonify({'events': output})
+        return jsonify({'Message': 'No Events Found'}), 404
+    return jsonify({'Message': 'No Events Found'}), 404
 
 
 # Route to rsvp to an event
@@ -223,7 +228,7 @@ def rsvp_event(current_user, event_id):
                 return jsonify({
                     'warning': 'You cannot make a reservation twice and you cannot make a '
                                'reservation to your own event'}), 403  # forbidden
-        return jsonify({'warning': 'The event you are trying to make a reservation to does not exist'})
+        return jsonify({'warning': 'The event you are trying to make a reservation to does not exist'}), 404
     if request.method == 'GET':
         event_found = Event.query.filter_by(id=event_id).filter_by(owner=current_user.id).first_or_404()
         if event_found:
@@ -235,7 +240,7 @@ def rsvp_event(current_user, event_id):
                     reservations.append(user_data)
                 return jsonify({'Attendants': reservations})
             return jsonify({"Message": "No reservations have been made to this event yet"})
-        return jsonify({'Warning': 'The event you are searching for does not exist'})
+        return jsonify({'Warning': 'The event you are searching for does not exist'}), 404
 
 
 @event.route('/search', methods=['POST'])
@@ -247,7 +252,7 @@ def search(current_user, limit=9, page=1):
     try:
         category = data['category']
         events_returned = current_user.search_event_by_category(category).paginate(page, per_page=limit,
-                                                                                   error_out=True).items
+                                                                                   error_out=False).items
         events_list = []
         if events_returned:
             for s_event in events_returned:
@@ -256,12 +261,12 @@ def search(current_user, limit=9, page=1):
                 events_list.append(event_data)
             return jsonify({'Events belonging to this category': events_list}), 200
 
-        return jsonify({'message': 'There are no events related to this category'})
+        return jsonify({'message': 'No Events Found'}), 404
     except KeyError:
         try:
             location = data['location']
             events_returned = current_user.search_event_by_location(location).paginate(page, per_page=limit,
-                                                                                       error_out=True).items
+                                                                                       error_out=False).items
             events_list = []
             if events_returned:
                 for s_event in events_returned:
@@ -270,12 +275,12 @@ def search(current_user, limit=9, page=1):
                     events_list.append(event_data)
                 return jsonify({'Events found in this location': events_list}), 200
 
-            return jsonify({'message': 'There are no events organized in this location so far'})
+            return jsonify({'message': 'No Events Found'}), 404
         except KeyError:
             try:
                 name = data['name']
                 events_returned = current_user.search_event_by_name(name).paginate(page, per_page=limit,
-                                                                                   error_out=True).items
+                                                                                   error_out=False).items
                 events_list = []
                 if events_returned:
                     for s_event in events_returned:
@@ -284,6 +289,6 @@ def search(current_user, limit=9, page=1):
                         events_list.append(event_data)
                     return jsonify({'The following events were found': events_list}), 200
 
-                return jsonify({'message': 'There are no events with such a name'})
+                return jsonify({'message': 'No Events Found'}), 404
             except KeyError:
                 return jsonify({'Warning': 'Cannot comprehend the given search parameter'})
