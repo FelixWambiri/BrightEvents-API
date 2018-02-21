@@ -250,9 +250,8 @@ def rsvp_event(current_user, event_id):
 def search(current_user, limit=9, page=1):
     data = request.get_json()
     try:
-        category = data['category']
-        events_returned = current_user.search_event_by_category(category).paginate(page, per_page=limit,
-                                                                                   error_out=False).items
+        events_returned = current_user.search_event_by_category(data['category']).paginate(page, per_page=limit,
+                                                                                           error_out=False).items
         events_list = []
         if events_returned:
             for s_event in events_returned:
@@ -264,9 +263,8 @@ def search(current_user, limit=9, page=1):
         return jsonify({'message': 'No Events Found'}), 404
     except KeyError:
         try:
-            location = data['location']
-            events_returned = current_user.search_event_by_location(location).paginate(page, per_page=limit,
-                                                                                       error_out=False).items
+            events_returned = current_user.search_event_by_location(data['location']).paginate(page, per_page=limit,
+                                                                                               error_out=False).items
             events_list = []
             if events_returned:
                 for s_event in events_returned:
@@ -278,9 +276,8 @@ def search(current_user, limit=9, page=1):
             return jsonify({'message': 'No Events Found'}), 404
         except KeyError:
             try:
-                name = data['name']
-                events_returned = current_user.search_event_by_name(name).paginate(page, per_page=limit,
-                                                                                   error_out=False).items
+                events_returned = current_user.search_event_by_name(data['name']).paginate(page, per_page=limit,
+                                                                                           error_out=False).items
                 events_list = []
                 if events_returned:
                     for s_event in events_returned:
