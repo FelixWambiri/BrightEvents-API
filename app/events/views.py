@@ -127,7 +127,7 @@ def update_events(current_user, event_id):
         event_found = current_user.update_event(event_id, name=name, category=category, location=location,
                                                 date_hosted=date_hosted,
                                                 description=description)
-        if type(event_found) is str:
+        if isinstance(event_found, str):
             return jsonify({'Warning': "You cannot update an event to duplicate an existing event"})
         else:
             return jsonify({'success': 'The event has been updated successfully',
