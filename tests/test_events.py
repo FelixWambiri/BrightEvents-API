@@ -7,10 +7,10 @@ from app import create_app, db
 
 
 class EventTestCase(unittest.TestCase):
-    """This class represents the bucketlist test case"""
+    """ This class represents the Bright Events test cases """
 
     def setUp(self):
-        """Set up reusable test variables."""
+        """ Set up reusable test variables. """
 
         self.app = create_app(config_name='testing')
         self.app.app_context().push()
@@ -443,6 +443,10 @@ class EventTestCase(unittest.TestCase):
         self.assertIn(b'The event does not exist', res_1.data)
 
     def test_unsuccessful_deletion_of_a_non_existent_event(self):
+        """
+        Test that a user cannot delete an event that does not exist
+        :return:
+        """
         # Register user
         self.register_user1()
         # login user
@@ -731,6 +735,10 @@ class EventTestCase(unittest.TestCase):
         self.assertEqual(2, len(events))
 
     def test_unsuccessful_access_to_reservations_not_created_by_current_user(self):
+        """
+        Test that a user cannot see reservations made to an event they did not create
+        :return: Reservations mae to an event
+        """
         # Register user
         self.register_user1()
         # login user
