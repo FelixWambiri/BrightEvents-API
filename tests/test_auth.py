@@ -97,7 +97,7 @@ class AuthTestCase(unittest.TestCase):
                                                 "password": "       ",
                                                 }),
                                content_type='application/json')
-        """ Test if empty spaces are passed the request returns a warning """
+        #  Test if empty spaces are passed the request returns a warning
         result = json.loads(res.data.decode())
         self.assertEqual(
             result['Warning'], 'This fields must be more than 5 characters and not empty spaces')
@@ -109,7 +109,7 @@ class AuthTestCase(unittest.TestCase):
                                                 "password": "FelixWambiri12@3",
                                                 }),
                                content_type='application/json')
-        """ Test if short data is passed the request returns a warning """
+        # Test if short data is passed the request returns a warning
         result = json.loads(res.data.decode())
         self.assertEqual(
             result['Warning'], 'This fields must be more than 5 characters and not empty spaces')
@@ -121,7 +121,7 @@ class AuthTestCase(unittest.TestCase):
                                                 "password": "FelixWambiri12@3",
                                                 }),
                                content_type='application/json')
-        """  Test if invalid data are passed the service returns a warning """
+        # Test if invalid data are passed the service returns a warning
         result = json.loads(res.data.decode())
         self.assertEqual(
             result['Warning'], 'Please enter a valid email')
