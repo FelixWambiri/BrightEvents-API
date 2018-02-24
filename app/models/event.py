@@ -1,23 +1,44 @@
-class Event:
+from app.init_db import db
+
+
+class Event(db.Model):
     """
     This class is the blueprint for creating an event
     It avails the attributes required for an event
     """
 
-    def __init__(self, name, category, location, owner, description):
+    #   Create an Events table
+    __tablename__ = 'events'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), nullable=False)
+    category = db.Column(db.String(64), nullable=False)
+    location = db.Column(db.String(64), nullable=False)
+    date_hosted = db.Column(db.DateTime)
+    description = db.Column(db.String(180), nullable=True)
+    owner = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user = db.relationship('User', back_populates='events')
+
+    def __init__(self, name, category, location, owner, date_hosted, description):
         self.name = name
         self.category = category
         self.location = location
         self.owner = owner
+        self.date_hosted = date_hosted
         self.description = description
-        self.event_attendees = {}
 
-    # Method to add attendees into the attendants list
-    def add_attendants(self, attendant_id, attendant_name):
-        return self.event_attendees.update({attendant_name: attendant_id})
+    def check_reservation(self, user):
+        return self.rsvps.filter_by(id=user.id).first()
 
-    # Method to know the number of attendants
-    def get_total_attendants(self):
-        return len(self.event_attendees)
+    def make_rsvp(self, user):
+        if self.check_reservation(user) is None:
+            self.rsvps.append(user)
+            db.session.add(user)
+            db.session.commit()
+        else:
+            raise AttributeError(
+                "You cannot make a reservation twice and you cannot make a reservation to your own event")
 
 
+# Return a printable representation of Event class object
+def __repr__(self):
+    return "<Event(name='%s',category='%s',owner='%s')>" % (self.name, self.category, self.owner)

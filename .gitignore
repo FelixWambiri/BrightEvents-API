@@ -3,3 +3,9 @@ APIvenv/
 app/__pycache__/
 app/instance/__pycache__/
 app/models/__pycache__/
+.env
+app/auth/__pycache__/
+app/events/__pycache__/
+migrations/__pycache__/
+migrations/versions/__pycache__/
+tests/__pycache__/
