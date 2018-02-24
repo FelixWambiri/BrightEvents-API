@@ -7,9 +7,7 @@ from app.models.user import User
 
 
 class UserAccounts:
-    """
-    Creates and manages individual user accounts
-    """
+    """ Creates and manages individual user accounts """
 
     @staticmethod
     def create_user(username, email, password):
