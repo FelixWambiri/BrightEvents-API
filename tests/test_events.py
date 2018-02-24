@@ -76,15 +76,15 @@ class EventTestCase(unittest.TestCase):
         self.headers1 = {
             'Authorization': 'Basic %s' %
                              b64encode(b"felix@gmail.com:FelixWambiri12@3")
-                             .decode("ascii")}
+                                 .decode("ascii")}
         self.headers2 = {
             'Authorization': 'Basic %s' %
                              b64encode(b"test@gmail.com:TestCase12@3")
-                             .decode("ascii")}
+                                 .decode("ascii")}
         self.headers5 = {
             'Authorization': 'Basic %s' %
                              b64encode(b"test1@gmail.com:TestCase12@3")
-                             .decode("ascii")}
+                                 .decode("ascii")}
 
         with self.app.app_context():
             self.client = self.app.test_client()
@@ -814,9 +814,8 @@ class EventTestCase(unittest.TestCase):
         events = json.loads(result.data.decode())['Events found in this location']
         self.assertEqual(1, len(events))
 
-        """
-        Test that no event is returned if no event exists with the given location in the search parameter
-        """
+        # Test that no event is returned if no event exists with the given location in the search parameter
+
         result1 = self.client.post('/api/search', headers=headers4, data=json.dumps({'location': 'Kisumu'}),
                                    content_type='application/json')
         self.assertIn(b'No Events Found', result1.data)
@@ -857,9 +856,8 @@ class EventTestCase(unittest.TestCase):
         events = json.loads(result.data.decode())['Events belonging to this category']
         self.assertEqual(2, len(events))
 
-        """
-        Test that no event is returned if no event exists with the category given in the search parameter
-        """
+        # Test that no event is returned if no event exists with the category given in the search parameter
+
         result1 = self.client.post('/api/search', headers=headers4, data=json.dumps({'category': 'Adventure'}),
                                    content_type='application/json')
         self.assertIn(b'No Events Found', result1.data)
