@@ -12,15 +12,14 @@ from app.models.event import Event
 class User(db.Model):
     """
     Create a Rsvp table to show which events a user has made a reservation to
-    This table user a many to many relationship
+    This table uses a many to many relationship
     """
     rsvps = db.Table('rsvps',
                      db.Column('user_id', db.ForeignKey('users.id'), primary_key=True),
                      db.Column('event_id', db.ForeignKey('events.id'), primary_key=True)
                      )
-    """
-       Create a User table
-       """
+
+    # Create a User table
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, nullable=False)
@@ -36,23 +35,19 @@ class User(db.Model):
 
     @property
     def password(self):
-        """
-        Prevent the password from being accessed
-        """
+        """  Prevent the password from being accessed """
 
         raise AttributeError('password is not a readable attribute.')
 
     @password.setter
     def password(self, password):
-        """
-        Set password to a hashed password
-        """
+        """ Set password to a hashed password """
+
         self.pw_hash = generate_password_hash(password)
 
     def compare_hashed_password(self, password):
-        """
-        To verify if the hashed password matches the actual password
-        """
+        """ To verify if the hashed password matches the actual password """
+
         return check_password_hash(self.pw_hash, password)
 
     def generate_confirmation_token(self, expiration=3600):
@@ -168,13 +163,13 @@ class User(db.Model):
 
     @staticmethod
     def search_event_by_category(category):
-        """This method searches an event by category and is case insensitive"""
+        """ This method searches an event by category and is case insensitive """
         return Event.query.filter(Event.category.ilike("%" + category + "%")).filter(
             cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc())
 
     @staticmethod
     def search_event_by_location(location):
-        """This method searches an event by location and is case insensitive"""
+        """ This method searches an event by location and is case insensitive """
         return Event.query.filter(Event.location.ilike("%" + location + "%")).filter(
             cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc())
 
@@ -194,9 +189,8 @@ class User(db.Model):
 
 
 class BlacklistToken(db.Model):
-    """
-    Token Model storing blacklisted tokens
-    """
+    """ Token Model for storing blacklisted tokens """
+
     __tablename__ = 'blacklist_tokens'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
