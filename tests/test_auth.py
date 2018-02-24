@@ -7,10 +7,10 @@ from app.models.user import User
 
 
 class AuthTestCase(unittest.TestCase):
-    """Test case for user authentication."""
+    """ Test case for user authentication. """
 
     def setUp(self):
-        """Set up reusable test variables."""
+        """ Set up reusable test variables. """
         self.app = create_app(config_name='testing')
         self.app.app_context().push()
         # Define the details needed to register a person
@@ -75,18 +75,14 @@ class AuthTestCase(unittest.TestCase):
         self.assertTrue(user.pw_hash != user2.pw_hash)
 
     def test_successful_user_registration(self):
-        """
-        Test whether user registration method works correctly.
-        """
+        """ Test whether user registration method works correctly. """
         res = self.client.post('/api/auth/register', data=self.user_data, content_type='application/json')
         result = json.loads(res.data.decode())
         self.assertEqual(result['message'], 'You have been registered successfully and can proceed to login')
         self.assertEqual(res.status_code, 201)
 
     def test_unsuccessful_registration_of_the_same_user_twice(self):
-        """
-        Test that the same user cannot be registered twice.
-        """
+        """ Test that the same user cannot be registered twice. """
         self.client.post('/api/auth/register', data=self.user_data, content_type='application/json')
         second_res = self.client.post('/api/auth/register', data=self.user_data, content_type='application/json')
         self.assertEqual(second_res.status_code, 202)
@@ -101,9 +97,7 @@ class AuthTestCase(unittest.TestCase):
                                                 "password": "       ",
                                                 }),
                                content_type='application/json')
-        """
-        Test if empty spaces are passed the request returns a warning
-        """
+        """ Test if empty spaces are passed the request returns a warning """
         result = json.loads(res.data.decode())
         self.assertEqual(
             result['Warning'], 'This fields must be more than 5 characters and not empty spaces')
@@ -115,9 +109,7 @@ class AuthTestCase(unittest.TestCase):
                                                 "password": "FelixWambiri12@3",
                                                 }),
                                content_type='application/json')
-        """
-        Test if short data is passed the request returns a warning
-        """
+        """ Test if short data is passed the request returns a warning """
         result = json.loads(res.data.decode())
         self.assertEqual(
             result['Warning'], 'This fields must be more than 5 characters and not empty spaces')
@@ -129,9 +121,7 @@ class AuthTestCase(unittest.TestCase):
                                                 "password": "FelixWambiri12@3",
                                                 }),
                                content_type='application/json')
-        """
-        Test if invalid data are passed the service returns a warning
-        """
+        """  Test if invalid data are passed the service returns a warning """
         result = json.loads(res.data.decode())
         self.assertEqual(
             result['Warning'], 'Please enter a valid email')
@@ -154,8 +144,7 @@ class AuthTestCase(unittest.TestCase):
         self.assertIn(b'Invalid Credentials', res_1.data)
 
     def test_successful_logout(self):
-        """
-        Test for successful logout before token expiration"""
+        """ Test for successful logout before token expiration """
         # The user is registered
         self.client.post('/api/auth/register', data=self.user_data, content_type='application/json')
         # The user is logged in
