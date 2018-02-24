@@ -6,9 +6,8 @@ class Event(db.Model):
     This class is the blueprint for creating an event
     It avails the attributes required for an event
     """
-    """
-        Create an Events table
-    """
+
+    #   Create an Events table
     __tablename__ = 'events'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
