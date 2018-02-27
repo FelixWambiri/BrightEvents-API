@@ -2,5 +2,9 @@ language: python
 python:
 - "3.6.2"
 install: pip install -r requirements.txt
+services:
+  - postgresql
+before_script:
+  - psql -c 'create database brighteventsdb_test;' -U postgres
 script: nosetests --with-coverage --cover-package=tests/ && coverage report
 after_success: coveralls

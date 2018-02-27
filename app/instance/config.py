@@ -1,27 +1,46 @@
+# Default config class
 import os
 
-basedir = os.path.abspath(os.path.dirname(__file__))
 
-
-# Default config class
 class BaseConfig(object):
     DEBUG = False
-    SECRET_KEY = 'S\x883\xc6\x01\x07\xc5 \r\xd8\xab\\\xc4{$\xdf\xc6-\x8a\xd1\x85\xd1j'
+    CSRF_ENABLED = False
+    SECRET_KEY = os.getenv('SECRET_KEY')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URI')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ECHO = True
+    MAIL_SERVER = 'smtp.googlemail.com'
+    MAIL_PORT = 465
+    MAIL_USE_TLS = False
+    MAIL_USE_SSL = True
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+    MAIL_DEFAULT_SENDER = 'felowambiri@gmail.com'
 
 
-# Test config class that inherits from the default config class
 class TestingConfig(BaseConfig):
+    """ Testing configurations"""
     DEBUG = True
     TESTING = True
-    WTF_CSRF_ENABLED = False
     PRESERVE_CONTEXT_ON_EXCEPTION = False
+    SQLALCHEMY_DATABASE_URI = os.getenv('TEST_DATABASE_URI')
 
 
-# Development config class that inherits from the default config class
 class DevelopmentConfig(BaseConfig):
+    """ Development configurations"""
     DEBUG = True
 
 
-# Production config class that inherits from the default config class
 class ProductionConfig(BaseConfig):
+    """ Production configurations"""
     DEBUG = False
+    TESTING = False
+    SQLALCHEMY_ECHO = False
+
+
+app_config = {
+    'development': DevelopmentConfig,
+    'testing': TestingConfig,
+    'production': ProductionConfig,
+
+}

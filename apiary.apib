@@ -6,7 +6,7 @@ HOST: http://polls.apiblueprint.org/
 BrightEvents API is a rest API that is resource oriented based upon URls.This API uses the standard HTTP response codes and verbs which are well understood by all clients.The type of responses provided in this API are in JSON format.
 
 ### Overview
-This defines the resources that compose BrightEvents REST API v1.
+This defines the resources that compose BrightEvents REST API v2.
 1. [Authentication](#authentication)
 2. [Parameters](#parameters)
 3. [HTTP status codes](#http-status-codes)
@@ -17,8 +17,13 @@ This defines the resources that compose BrightEvents REST API v1.
 2. [View Event](#view-event)
 3. [Update Event](#update-event)
 4. [Delete Event](#delete-event)
-5. [View all events](#view-all-events)
-6. [RSVP an Event](#rsvp-an-event)
+5. [Viewing All Individual Events](#view-all-individual-events)
+6. [View all events](#view-all-events)
+7. [RSVP an Event](#rsvp-an-event)
+8. [View Reservations to An Event](#view-rsvp-to-an-event)
+9. [Search For An Event](#search-for-an-event)
+10. [Change Password](#change-password)
+11. [Reset Password](#reset-password)
 
 <a id='authentication'></a>
 #### Authentication
@@ -42,7 +47,7 @@ You register by providing some basic information such as a username, an email wh
 |                |**Contrary** to this you will get an error message asking for valid inputs|
 
 ##### Definition
-`POST http://127.0.0.1:5000/api/v1/auth/register`
+`POST http://127.0.0.1:5000/api/auth/register`
 
 ##### Example Request Body
 ```JSON
@@ -61,10 +66,10 @@ You register by providing some basic information such as a username, an email wh
 ```
 
 ##### Login
-You login into your account by providing your unique email and a password.
+You login into your account by providing your unique email and a password.After login a unique token is generated whhich will be passed into the headers of every route to authenticate you to perform desired operations.
 
 ##### Definition
-`POST http://127.0.0.1:5000/api/v1/auth/login`
+`POST http://127.0.0.1:5000/api/auth/login`
 
 ##### Example Request Body
 ```JSON
@@ -77,7 +82,7 @@ You login into your account by providing your unique email and a password.
 ##### Example Response
 ```JSON
 {
-"Success": "You were successfully logged in"
+eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwiZXhwIjoxNTE4NjA2MTgwfQ.s8Vn7BXTWrANQrhdt3AKLtha-6HQKhOZrg1Zb5_B49M
 }
 ```
 
@@ -85,12 +90,12 @@ You login into your account by providing your unique email and a password.
 To log out of your account you just need to make a post request and the API will log you out with a message confirming your successful logout
 
 ##### Definition
-`POST http://127.0.0.1:5000/api/v1/auth/logout`
+`POST http://127.0.0.1:5000/api/auth/logout`
 
 ##### Example Response
 ```JSON
 {
-"success": "You are logged out"
+"success": "Successfully logged out"
 }
 ```
 
@@ -111,9 +116,12 @@ The following are some of the commonly used standard HTTP response status codes
 |----|:----------------- |:------------------------------------------------------------------------------|
 |200 |Ok                 |Everything worked as expected                                                  |
 |201 |Created            |The request has been fulfilled and resulted in a new resource being created    |
+|202 |Accepted           |The request has been accepted for processing, but the processing has not been  |
+|    |                   |completed                                                                      |
 |204 |No Content         |The server has fulfilled the request but does not need to return an entity-body|
 |401 |Unauthorized       |The request requires user authentication                                       |
 |404 |Not Found          |The server has not found anything matching the Request-URI                     |
+|403 |Forbidden          |The user might not have the necessary permissions for a resource               |
 
 
 <a id='http-verbs'></a>
@@ -128,7 +136,7 @@ This API uses appropriate HTTP verbs for each action.
 
 <a id='create-event'></a>
 ## Create Event
-To create an event you need to provide some information which which will identify the event such as event name,category, location, owner and description.The description parameter is optional while the other parameters are a necessity.Each parameter should be more than five characters and not empty spaces.Each event is identified via its name.
+To create an event you need to provide some information which which will identify the event such as event name,category, location and description.The description parameter is optional while the other parameters are a necessity.Each parameter should be more than five characters and not empty spaces.Each event is identified via its name.
 #### Attributes
 |Name            | Type            | Description                                             |
 |----------------|:----------------|:--------------------------------------------------------|
@@ -138,14 +146,15 @@ To create an event you need to provide some information which which will identif
 |                |**Contrary** to this you will get an error message asking for valid inputs |
 |Category        |String           |Category of the event being created                      |
 |Location        |String           |This is the category which event will belong to          |
-|Owner           |String           |This is the person or organization hosting the event     |
-|                |                 |Category,Location and Owner should be strictly alphabetic|
+|Date hosted     |Date             |This is the date in which the event will be held and it  |
+|                |                 |should not be a past date                                |
+|                |**Contrary** to this you will get an error message asking for valid date   |
 |                |**Contrary** to this you will get an error message asking for valid inputs |
 |Description     |String           |This is any additional information which better describes|
 |                |                 | the event.                                              |
 
 ##### Definition
-`POST http://127.0.0.1:5000/api/v1/events`
+`POST http://127.0.0.1:5000/api/events`
 
 ##### Example Request Body
 ```JSON
@@ -153,7 +162,7 @@ To create an event you need to provide some information which which will identif
 "name":"Sepetuka",
 "category":"Social",
 "location":"Nairobi",
-"owner":"Bonfire",
+"date_hosted":"6-6-2018",
 "description":"Commits are  atomic, consistent and contain meaningful messages that are   context specific"
 }
 ```
@@ -166,7 +175,7 @@ To create an event you need to provide some information which which will identif
         "name":"Sepetuka",
         "category":"Social",
         "location":"Nairobi",
-        "owner":"Bonfire",
+        "date_hosted":"Wed, 06 Jun 2018 00:00:00 GMT",
         "description":"Commits are  atomic, consistent and contain meaningful messages that are   context specific"
     }
 }
@@ -174,18 +183,18 @@ To create an event you need to provide some information which which will identif
 
 <a id='view-event'></a>
 ## View Event
-This resource returns an individual evet given the name
+This resource returns an individual event given the name
 
 #### Attribute
 |Name            | Type            | Description                                   |
 |----------------|:----------------|:----------------------------------------------|
-|Name            |String           |This is the name of the event being retrieved  |
+|Id              |Int              |This is the Id of the event being retrieved    |
 
 #### Returns
-This resource returns an individual event if a valid name was given.Raises an `404 Not Found`error if otherwise and returns a message that no such event exists.
+This resource returns an individual event if a valid Id was given.Raises an `404 Not Found`error if otherwise and returns a message that no such event exists.
 
 ##### Definition
-`GET http://127.0.0.1:5000/api/v1/events/Sepetuka`
+`GET http://127.0.0.1:5000/api/event/1`
 
 ##### Example Response 
 ```JSON
@@ -194,7 +203,7 @@ This resource returns an individual event if a valid name was given.Raises an `4
         "name":"Sepetuka",
         "category":"Social",
         "location":"Nairobi",
-        "owner":"Bonfire",
+        "date_hosted":"Wed, 06 Jun 2018 00:00:00 GMT",
         "description":"Commits are  atomic, consistent and contain meaningful messages that are   context specific"
     }
 }
@@ -209,23 +218,23 @@ This resource returns an individual event if a valid name was given.Raises an `4
 
 <a id='update-event'></a>
 ## Update Event
-This request updates the specified event through the values of the parameter passed.You specify an event to update through its name Any attributes or parameters not provided will be left unchanged.
-This request accepts name, category, location, owner and description as parameters and this parameter are optional as it is not a must for all of the to be updated.
+This request updates the specified event through the values of the parameter passed.You specify an event to update through its Id. Any attributes or parameters not provided will be left unchanged.
+This request accepts name, category, location, date_hosted and description as parameters and this parameter are optional as it is not a must for all of the to be updated.
 #### Attributes
 |Name            | Type            | Description                                         |
 |----------------|:----------------|:----------------------------------------------------|
-|Name            |String           |This is the name of the event you want to update     |  
+|Id              |Int              |This is the Id of the event you want to update       |  
 |Name            |String           |New name to replace previous one                     |
 |Category        |String           |New category to replace previous one                 |
 |Location        |String           |New location to replace previous one                 |
-|Owner           |String           |New Event organiser to replace previous one          |
+|date_hosted     |Date             |New Event date to replace previous one               |
 |Description     |String           |New or additional description to replace previous one| 
 
 #### Returns
 Returns the updated event object if the update was successful and raises and `404 Not Found` error if the event being updated does not exist.
 
 ##### Definition
-`PUT http://127.0.0.1:5000/api/v1/events/Sepetuka`
+`PUT http://127.0.0.1:5000/api/events/1`
 
 ##### Example Request Body - When updating all fields
 ```JSON
@@ -233,7 +242,7 @@ Returns the updated event object if the update was successful and raises and `40
 "name":"Bootcamp",
 "category":"Learning",
 "location":"Uganda",
-"owner":"Andela",
+"date_hosted":"7-7-2018",
 "description":"A learning experience like no other"
 }
 ```
@@ -246,7 +255,7 @@ Returns the updated event object if the update was successful and raises and `40
         "description": "A learning experience like no other",
         "location": "Uganda",
         "name": "Bootcamp",
-        "owner": "Andela"
+        "date_hosted":"Sat, 07 July 2018 00:00:00 GMT",
     },
     "success": "The event has been updated successfully"
 }
@@ -258,7 +267,7 @@ Returns the updated event object if the update was successful and raises and `40
 "name":"",
 "category":"",
 "location":"Mombasa",
-"owner":"Andela UK",
+"date_hosted":"",
 "description":""
 }
 ```
@@ -271,7 +280,7 @@ Returns the updated event object if the update was successful and raises and `40
         "description": "A learning experience like no other",
         "location": "Mombasa",
         "name": "Bootcamp",
-        "owner": "Andela UK"
+        "date_hosted":"Sat, 07 July 2018 00:00:00 GMT",
     },
     "success": "The event has been updated successfully"
 }
@@ -279,46 +288,91 @@ Returns the updated event object if the update was successful and raises and `40
 
 <a id='delete-event'></a>
 ## Delete Event
-You can delete an event via the API by passing the name of the event you want delete as an identifier.When you delete an event, it is not only deleted from your own account but also from the list of all events
+You can delete an event via the API by passing the Id of the event you want delete as an identifier.
 
 #### Attribute
 |Name            | Type            | Description                                   |
 |----------------|:----------------|:----------------------------------------------|
-|Name            |String           |This is the name of the event being deleted    |
+|Id              |Int              |This is the Id of the event being deleted      |
 
 #### Returns
-Returns a `204 No Content` status code on successful deletion of an event and raises and error and passes a message if the event does not exist or if it has already been deleted.
+Returns a message confirming successful deletion of an event and raises and error and passes a message if the event does not exist or if it has already been deleted.
 
 ##### Definition
-`DELETE http://127.0.0.1:5000/api/v1/events/Bootcamp`
+`DELETE http://127.0.0.1:5000/api/events/1`
 
 ##### Example Response 
-`204 No Content`
+```JSON
+{
+    "Success": "Event deleted successfully"
+}
+```
+
+<a id='view-all-individual-events'></a>
+## Viewing All Individual Events
+Returns a list of all events belonging to a particular person
+
+##### Definition
+`GET http://127.0.0.1:5000/api/my_events`
+`GET http://127.0.0.1:5000/api/my_events/<int:page>`
+
+#### Returns
+It returns a list of all the events that have been created by a particular person displaying all the information related to the event.
+If there are no events created a message will be returned saying "So far you have not created any events".
+Due to pagination,only a limited number of events are returned per page. To see all your events you will have to enter the number of the next page to view events in the next page
+##### Example Response
+```JSON
+{
+    "events": [
+        {
+            "category": "adventure",
+            "date_hosted": "Wed, 06 Jun 2018 00:00:00 GMT",
+            "description": "This is the best even ever",
+            "location": "voi",
+            "name": "Ice_Skating"
+        },
+        {
+            "category": "Learning",
+            "date_hosted": "Wed, 06 Jun 2018 00:00:00 GMT",
+            "description": "This is the best even ever",
+            "location": "voi",
+            "name": "Training"
+        }
+    ]
+}
+```
+
 
 <a id='view-all-events'></a>
 ## Viewing All Events
 Returns a list of all the events
 
 ##### Definition
-`GET http://127.0.0.1:5000/api/v1/events`
+`GET http://127.0.0.1:5000/api/events`
+`GET http://127.0.0.1:5000/api/events/<int:page>`
 
 #### Returns
-It returns a list of all the events that have been created displaying just some basic inormation such as name, category and location.
-If there are no events created a message will be returned saying no events have been created that far.This request should not raise an error.
-
+It returns a list of all the events that have been created displaying all the information related to the event.
+If there are no events created a message will be returned saying "So far no events have been created".
+Due to pagination,only a limited number of events are returned per page. To see all events you will have to enter the number of the next page to view events in the next page
 ##### Example Response
 ```JSON
 {
-    "Events": [
+    {
+    "events": [
         {
-            "category": "Social",
-            "location": "Nairobi",
-            "name": "Sepetuka"
+            "category": "adventure",
+            "date_hosted": "Wed, 06 Jun 2018 00:00:00 GMT",
+            "description": "This is the best even ever",
+            "location": "voi",
+            "name": "Ice_Skating"
         },
         {
-            "category": "Social",
-            "location": "Nairobi",
-            "name": "Bootcamp"
+            "category": "Learning",
+            "date_hosted": "Wed, 06 Jun 2018 00:00:00 GMT",
+            "description": "This is the best even ever",
+            "location": "voi",
+            "name": "Training"
         }
     ]
 }
@@ -326,29 +380,246 @@ If there are no events created a message will be returned saying no events have 
 
 <a id='rsvp-an-event'></a>
 ## RSVP An Event
-This request allows you to RSVP into an event.You just need to pass the name of the event which you want to RSVP into.
+This request allows you to RSVP into an event.You just need to pass the Id of the event which you want to RSVP into.
 
 #### Attribute
 |Name            | Type            | Description                                   |
 |----------------|:----------------|:----------------------------------------------|
-|Name            |String           |This is the name of the event being RSVP into  |
+|Id              |Int              |This is the Id of the event being RSVP into    |
 
 #### Returns
 Returns a message informing you of a successful RSVP into an event
 
 ##### Definition
-`POST http://127.0.0.1:5000/api/v1/event/Sepetuka/rsvp`
+`POST http://127.0.0.1:5000/api/event/1/rsvp`
 
 ##### Example Response
 ```JSON
 {
-    "success": "You have rsvp into an event successfully"
+    "success": 'You have made a reservation successfully'
 }
 ```
 You can only make a reservation to an event once and if you try it twice you get an error message informing you of this
 ##### Example Response
 ```JSON
 {
-    "warning": "You have already made an RSVP to this event"
+    "warning": "You cannot make a reservation twice"
+}
+```
+<a id='view-rsvp-to-an-event'></a>
+## View Reservations to An Event
+This request allows you to view resrvations to an event.You just need to pass the Id of the event which you want to view the reservations.
+
+#### Attribute
+|Name            | Type            | Description                                   |
+|----------------|:----------------|:----------------------------------------------|
+|Id              |Int              |This is the Id of the event being RSVP into    |
+
+#### Returns
+Returns a the username and email address of the people who have made reservations to the event.
+
+##### Definition
+`GET http://127.0.0.1:5000/api/event/1/rsvp`
+
+##### Example Response
+```JSON
+{
+    "Attendants": [
+        {
+            "email": "felixwambiri21@gmail.com",
+            "username": "Feloh"
+        }
+    ]
+}
+```
+<a id='search-for-an-event'></a>
+## Search For An Event
+This request allows you to search for events based on three parameters, name location and category.
+Due to pagination you can move to the next page by entering the number of the next page in url.
+
+#### Attributes
+|Name            | Type            | Description                                                         |
+|----------------|:----------------|:--------------------------------------------------------------------|
+|Name            |String           |This is the name of the event you want to search                     |
+|category        |String           |This is the category containing the events you are interested in     |
+|location        |String           |This is the location containing the events you are interested in     |
+
+
+#### Returns
+Returns the events with the name passed in the search parameters
+Returns the events related category entered in the search parameters
+Returns the events hosted in the location entered in the search parameters
+
+##### Definition
+`POST http://127.0.0.1:5000/api/search`
+`POST http://127.0.0.1:5000/api/search/<int:page>`
+
+##### Example Request Body - When searching by name
+```JSON
+{
+"name":"Training"
+}
+```
+
+##### Example Response
+```JSON
+{
+    "The following events were found": [
+        {
+            "category": "Learning",
+            "date_hosted": "Wed, 06 Jun 2018 00:00:00 GMT",
+            "description": "This is the best even ever",
+            "location": "voi",
+            "name": "Training"
+        }
+    ]
+}
+```
+
+##### Definition
+`POST http://127.0.0.1:5000/api/search`
+`POST http://127.0.0.1:5000/api/search/<int:page>`
+
+##### Example Request Body - When searching by category
+```JSON
+{
+ "category":"learning"
+}
+```
+
+##### Example Response
+```JSON
+{
+    "Events belonging to this category": [
+        {
+            "category": "Learning",
+            "date_hosted": "Wed, 06 Jun 2018 00:00:00 GMT",
+            "description": "This is the best even ever",
+            "location": "voi",
+            "name": "Training"
+        }
+    ]
+}
+```
+
+
+##### Definition
+`POST http://127.0.0.1:5000/api/search`
+`POST http://127.0.0.1:5000/api/search/<int:page>`
+
+##### Example Request Body - When searching by location
+```JSON
+{
+"location":"voi"
+}
+```
+
+##### Example Response
+```JSON
+{
+    "Events found in this location": [
+        {
+            "category": "adventure",
+            "date_hosted": "Wed, 06 Jun 2018 00:00:00 GMT",
+            "description": "This is the best even ever",
+            "location": "voi",
+            "name": "Ice_Skating"
+        },
+        {
+            "category": "Learning",
+            "date_hosted": "Wed, 06 Jun 2018 00:00:00 GMT",
+            "description": "This is the best even ever",
+            "location": "voi",
+            "name": "Training"
+        }
+    ]
+}
+```
+
+
+<a id='change-password'></a>
+## Change Password
+This request allows you to change your password.You provide the previous password to update and the new password to update it with.
+
+#### Attributes
+|Name                | Type            | Description                                               |
+|--------------------|:----------------|:----------------------------------------------------------|
+|previous_password   |String           |This is the previous password which you want to replace    |
+|new_pass            |String           |This is the new password which you want to change to       |
+
+#### Returns
+Returns a success message confirming that the password was updated successfully
+Returns a warning if you enter the wrong previous password and asks you to try to remember it.
+
+##### Definition
+`PUT http://127.0.0.1:5000/api/auth/change-password`
+
+##### Example Request Body
+```JSON
+{
+"previous_password":"YourPreviousPassword",
+"new_pass":"YourNewPassword"
+}
+```
+
+##### Example Response
+```JSON
+{
+    "success": "The password has been updated successfully"
+}
+```
+
+##### Example Response-when the wrong previous password is entered
+```JSON
+{
+    "warning": "Please try to remember you previous password"
+}
+```
+
+
+<a id='reset-password'></a>
+## Reset Password 
+This request allows you to reset your password incase you have forgotten it.To reset your password fist, you have to pass your email address to `http://127.0.0.1:5000/api/auth/acquire_token` route which sends you a password reset token to your email adrress.This token is the one which will be used to reset the password.
+
+#### Attributes
+|Name                | Type            | Description                                                        |
+|--------------------|:----------------|:-------------------------------------------------------------------|
+|email address       |Email            |This is the email address  to which the reset token will be sent to |  
+|new_pass            |String           |This is the new password which you want to change to                |
+
+
+##### Definition
+`POST http://127.0.0.1:5000/api/auth/acquire_token`
+
+##### Example Request Body
+```JSON
+{
+"email":"felixwambiri21@gmail.com"
+}
+```
+
+##### Example Response
+```JSON
+{
+"message": "a confirmation email has been sent to felixwambiri21@gmail.com"
+}
+```
+
+
+##### Definition
+`PUT http://127.0.0.1:5000/api/auth/reset_password`
+
+##### Example Request Body
+```JSON
+{
+"token":"TokenRecievedInTheEmail",
+"new_pass":"YourNewPassword"
+}
+```
+
+##### Example Response
+```JSON
+{
+"message": "The password was reset successfully,Now you can proceed to login"
 }
 ```

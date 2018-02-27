@@ -1,13 +1,10 @@
-"""
-To write command-line tasks belonging outside the web app itself
-"""
-from flask_script import Manager
+"""Entry point to start our app"""
+import os
 
-# Getting the flask instance
-from app.views import app
+from app import create_app
 
-# Manager instance
-manager = Manager(app)
+development = os.getenv('APP_SETTINGS')
+app = create_app(config_name='development')
 
 if __name__ == '__main__':
-    manager.run()
+    app.run()

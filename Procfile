@@ -1,1 +1,1 @@
-web: waitress-serve --bind 0.0.0.0:$PORT python manage.py db upgrade run:app
+web: waitress-serve --bind 0.0.0.0:$PORT  python manage.py db upgrade run:app
