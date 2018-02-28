@@ -9,7 +9,7 @@ from flask_script import Manager
 # Getting the flask instance
 from app import create_app, db
 
-app = create_app(config_name='testing')
+app = create_app(config_name='APP_SETTINGS')
 
 migrate = Migrate(app, db)
 
