@@ -4,6 +4,7 @@ from flask import current_app
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from sqlalchemy import cast, Date
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import or_
 
 from app.init_db import db
 from app.models.event import Event
@@ -157,21 +158,21 @@ class User(db.Model):
         """
         return Event.query.filter_by(owner=self.id).count()
 
-    @staticmethod
-    def search_event_by_name(name):
-        return Event.query.filter(Event.name.ilike("%" + name + "%")).order_by(Event.date_hosted.desc())
+    # @staticmethod
+    # def search_event_by_name(name):
+    #     return Event.query.filter(Event.name.ilike("%" + name + "%")).order_by(Event.date_hosted.desc())
 
-    @staticmethod
-    def search_event_by_category(category):
-        """ This method searches an event by category and is case insensitive """
-        return Event.query.filter(Event.category.ilike("%" + category + "%")).filter(
-            cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc())
+    # @staticmethod
+    # def search_event_by_category(category):
+    #     """ This method searches an event by category and is case insensitive """
+    #     return Event.query.filter(Event.category.ilike("%" + category + "%")).filter(
+    #         cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc())
 
-    @staticmethod
-    def search_event_by_location(location):
-        """ This method searches an event by location and is case insensitive """
-        return Event.query.filter(Event.location.ilike("%" + location + "%")).filter(
-            cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc())
+    # @staticmethod
+    # def search_event_by_location(location):
+    #     """ This method searches an event by location and is case insensitive """
+    #     return Event.query.filter(Event.location.ilike("%" + location + "%")).filter(
+    #         cast(Event.date_hosted, Date) >= date.today()).order_by(Event.date_hosted.desc())
 
     def change_password(self, new_pass):
         """
