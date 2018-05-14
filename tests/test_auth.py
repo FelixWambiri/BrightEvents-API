@@ -13,7 +13,7 @@ class AuthTestCase(unittest.TestCase):
         """ Set up reusable test variables. """
         self.app = create_app(config_name='testing')
         self.app.app_context().push()
-        
+
         # Define the details needed to register a person
         self.user_data = json.dumps(
             {
@@ -157,7 +157,7 @@ class AuthTestCase(unittest.TestCase):
         header = {'Authorization': 'Bearer ' + access_token}
 
         # The user is logged out successfully if the token has not yet expired
-        res = self.client.post("/api/auth/logout", data={}, headers=header, content_type='application/json')
+        res = self.client.post("/api/auth/logout", headers=header, content_type='application/json')
         data = json.loads(res.data.decode())
         self.assertIn("Successfully logged out", str(data))
         self.assertEqual(res.status_code, 200)
