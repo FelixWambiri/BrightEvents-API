@@ -242,17 +242,15 @@ def rsvp_event(current_user, event_id):
             return jsonify({"Message": "No reservations have been made to this event yet"})
         return jsonify({'Warning': 'The event you are to view a reservations for does not exist'}), 404
 
-# Route to search for events
+# Route for searching events
 @event.route('/search', methods=['POST'])
 @event.route('/search/page=<int:page>&limit=<int:limit>', methods=['POST'])
 @event.route('/search/page=<int:page>', methods=['POST'])
 @token_required
-def combined_search(current_user):
+def combined_search(current_user, limit=9, page=1):
     q = request.args.get('q')
     if q:
-        events = Event.query.filter(or_(Event.name.ilike('%{}%'.format(q)),Event.category.ilike('%{}%'.format(q)),Event.location.ilike('%{}%'.format(q)))).paginate(page, per_page=limit,
-                                                                                              error_out=False).items
-
+        events = Event.query.filter(or_(Event.name.ilike('%{}%'.format(q)),Event.category.ilike('%{}%'.format(q)),Event.location.ilike('%{}%'.format(q)))).all()
         events_list = []
         if events:
             for s_event in events:
