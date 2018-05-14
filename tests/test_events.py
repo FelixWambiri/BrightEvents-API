@@ -72,19 +72,6 @@ class EventTestCase(unittest.TestCase):
                 'email': 'test1@gmail.com',
                 'password': 'TestCase12@3'
             })
-        # Define a persons` login details that is the username and the password
-        self.headers1 = {
-            'Authorization': 'Basic %s' %
-                             b64encode(b"felix@gmail.com:FelixWambiri12@3")
-                                 .decode("ascii")}
-        self.headers2 = {
-            'Authorization': 'Basic %s' %
-                             b64encode(b"test@gmail.com:TestCase12@3")
-                                 .decode("ascii")}
-        self.headers5 = {
-            'Authorization': 'Basic %s' %
-                             b64encode(b"test1@gmail.com:TestCase12@3")
-                                 .decode("ascii")}
 
         with self.app.app_context():
             self.client = self.app.test_client()
@@ -94,22 +81,23 @@ class EventTestCase(unittest.TestCase):
 
     # Register and login the above defined people instead of doing so in each method
     def register_user1(self):
-        return self.client.post('/api/auth/register', data=self.user1_data, content_type='application/json')
+
+        return self.client.post('/api/auth/register', data = self.user1_data, content_type='application/json')
 
     def login_user1(self):
-        return self.client.post("/api/auth/login", headers=self.headers1, content_type='application/json')
+        return self.client.post("/api/auth/login", data = self.user1_data, content_type='application/json')
 
     def register_user2(self):
-        return self.client.post('/api/auth/register', data=self.user2_data, content_type='application/json')
+        return self.client.post('/api/auth/register', data = self.user2_data, content_type='application/json')
 
     def login_user2(self):
-        return self.client.post("/api/auth/login", headers=self.headers2, content_type='application/json')
+        return self.client.post("/api/auth/login", data = self.user2_data, content_type='application/json')
 
     def register_user3(self):
-        return self.client.post('/api/auth/register', data=self.user3_data, content_type='application/json')
+        return self.client.post('/api/auth/register', data = self.user3_data, content_type='application/json')
 
     def login_user3(self):
-        return self.client.post("/api/auth/login", headers=self.headers5, content_type='application/json')
+        return self.client.post("/api/auth/login", data = self.user1_data, content_type='application/json')
 
     def test_that_without_token_based_authentication_you_cannot_perform_any_CRUD_operation(self):
         """
@@ -119,8 +107,9 @@ class EventTestCase(unittest.TestCase):
         """
         self.register_user1()
         result = self.login_user1()
+
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        header = {'Authorization': 'Bearer ' + access_token1}
 
         # Test creating an event but no token is passed
         # A Token is missing error is returned
@@ -128,7 +117,7 @@ class EventTestCase(unittest.TestCase):
         self.assertIn(b'Token is missing"', res.data)
 
         # Create an actual event to be used in testing other operations by passing in the token
-        res = self.client.post('/api/events', headers=headers3, data=self.event4_data, content_type='application/json')
+        res = self.client.post('/api/events', headers=header, data=self.event4_data, content_type='application/json')
         self.assertEqual(res.status_code, 201)
 
         # Test updating an event but no token is passed
@@ -168,8 +157,8 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
-        res = self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
+        header3 = {'Authorization': 'Bearer ' + access_token1}
+        res = self.client.post('/api/events', headers=header3, data=self.event1_data, content_type='application/json')
         self.assertEqual(res.status_code, 201)
 
     def test_successful_multiple_event_creation_by_single_user(self):
@@ -180,18 +169,18 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        header3 = {'Authorization': 'Bearer ' + access_token1}
 
         # User creates the first evnt
-        res = self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
+        res = self.client.post('/api/events', headers=header3, data=self.event1_data, content_type='application/json')
         self.assertEqual(res.status_code, 201)
 
         # User creates the second event
-        res = self.client.post('/api/events', headers=headers3, data=self.event2_data, content_type='application/json')
+        res = self.client.post('/api/events', headers=header3, data=self.event2_data, content_type='application/json')
         self.assertEqual(res.status_code, 201)
 
         # User creates the third event
-        res = self.client.post('/api/events', headers=headers3, data=self.event3_data, content_type='application/json')
+        res = self.client.post('/api/events', headers=header3, data=self.event3_data, content_type='application/json')
         self.assertEqual(res.status_code, 201)
 
     def test_unsuccessful_creation_of_duplicate_events(self):
@@ -205,7 +194,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
 
         # Create the event the first time
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
@@ -227,7 +216,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
 
         # Try creating an event with a name with less than five characters and you will get an error
         res = self.client.post('/api/events', headers=headers3, data=json.dumps(
@@ -277,7 +266,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
 
         # The User creates the event
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
@@ -307,8 +296,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
-
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
         # User creates the event
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
 
@@ -337,7 +325,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated for user one
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
 
         # User one creates the first event
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
@@ -348,7 +336,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user2()
         # Get the token generated for user two
         access_token2 = json.loads(result.data.decode())['token']
-        headers4 = {'x-access-token': access_token2}
+        headers4 = {'Authorization': 'Bearer ' + access_token2}
 
         # User two creates the second event
         res = self.client.post('/api/events', headers=headers4, data=self.event3_data, content_type='application/json')
@@ -380,7 +368,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
 
         res_1 = self.client.put('/api/events/14', headers=headers3, data=json.dumps(
             {
@@ -404,7 +392,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
 
         # The user creates the event
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
@@ -425,7 +413,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
 
         # User one creates the first event
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
@@ -433,9 +421,9 @@ class EventTestCase(unittest.TestCase):
         # Register user two
         self.register_user2()
         # login user two
-        result = self.login_user2()
-        access_token2 = json.loads(result.data.decode())['token']
-        headers4 = {'x-access-token': access_token2}
+        result1 = self.login_user2()
+        access_token2 = json.loads(result1.data.decode())['token']
+        headers4 = {'Authorization': 'Bearer ' +  access_token2}
 
         # User two tries to delete an event created by user one
         # An event does not exist error is returned
@@ -453,7 +441,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
 
         # The user tries to delete an event that does not exist
         # An event does not exist error is raised
@@ -485,7 +473,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
 
         # The user creates the first event
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
@@ -508,7 +496,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
 
         # Register user two
         self.register_user2()
@@ -516,7 +504,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user2()
         # Get the token generated for user two
         access_token2 = json.loads(result.data.decode())['token']
-        headers4 = {'x-access-token': access_token2}
+        headers4 = {'Authorization': 'Bearer ' + access_token2}
 
         # User one creates the first event
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
@@ -536,7 +524,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
 
         # The user creates the first event
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
@@ -563,7 +551,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
 
         # User one creates the first event
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
@@ -577,7 +565,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user2()
         # Get the token generated by user two
         access_token2 = json.loads(result.data.decode())['token']
-        headers4 = {'x-access-token': access_token2}
+        headers4 = {'Authorization': 'Bearer ' + access_token2}
 
         # User two creates their first event
         self.client.post('/api/events', headers=headers4, data=self.event3_data, content_type='application/json')
@@ -606,7 +594,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
 
         # User one creates the first event
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
@@ -623,7 +611,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user2()
         # Get the token generated for user two
         access_token2 = json.loads(result.data.decode())['token']
-        headers4 = {'x-access-token': access_token2}
+        headers4 = {'Authorization': 'Bearer ' +  access_token2}
 
         # User two creates the fourth event
         self.client.post('/api/events', headers=headers4, data=self.event4_data, content_type='application/json')
@@ -644,7 +632,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
 
         # Register user two
         self.register_user2()
@@ -652,7 +640,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user2()
         # Get the token generated for user two
         access_token2 = json.loads(result.data.decode())['token']
-        headers4 = {'x-access-token': access_token2}
+        headers4 = {'Authorization': 'Bearer ' + access_token2}
 
         # User one creates the first event
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
@@ -671,7 +659,8 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
+
 
         # Register user two
         self.register_user2()
@@ -679,7 +668,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user2()
         # Get the token generated for user two
         access_token2 = json.loads(result.data.decode())['token']
-        headers4 = {'x-access-token': access_token2}
+        headers4 = {'Authorization': 'Bearer ' + access_token2}
 
         # User one creates the first event
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
@@ -702,7 +691,8 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
+
 
         # Register user two
         self.register_user2()
@@ -710,7 +700,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user2()
         # Get the token generated for user two
         access_token2 = json.loads(result.data.decode())['token']
-        headers4 = {'x-access-token': access_token2}
+        headers4 = {'Authorization': 'Bearer ' + access_token2}
 
         # Register user three
         self.register_user3()
@@ -718,7 +708,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user3()
         # Get the token generated for user three
         access_token3 = json.loads(result.data.decode())['token']
-        headers6 = {'x-access-token': access_token3}
+        headers6 = {'Authorization': 'Bearer ' + access_token3}
 
         # User one creates event the first event
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
@@ -745,7 +735,8 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
+
 
         # Register user two
         self.register_user2()
@@ -753,7 +744,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user2()
         # Get the token generated for user two
         access_token2 = json.loads(result.data.decode())['token']
-        headers4 = {'x-access-token': access_token2}
+        headers4 = {'Authorization': 'Bearer ' + access_token2}
 
         # Register user three
         self.register_user3()
@@ -761,7 +752,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user3()
         # Get the token generated for user three
         access_token3 = json.loads(result.data.decode())['token']
-        headers6 = {'x-access-token': access_token3}
+        headers6 = {'Authorization': 'Bearer ' + access_token3}
 
         # User one creates event the first event
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
@@ -774,7 +765,7 @@ class EventTestCase(unittest.TestCase):
 
         # User three tries to see reservations made belonging an event created by user one and they get an error
         result = self.client.get('/api/event/1/rsvp', headers=headers4)
-        self.assertEqual(result.status_code, 401)
+        self.assertEqual(result.status_code, 404)
 
     def test_successful_event_searching_by_location(self):
         """
@@ -787,7 +778,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
 
         # Register user two
         self.register_user2()
@@ -795,7 +786,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user2()
         # Get the token generated for user two
         access_token2 = json.loads(result.data.decode())['token']
-        headers4 = {'x-access-token': access_token2}
+        headers4 = {'Authorization': 'Bearer ' + access_token2}
 
         # User creates an event in Nairobi
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
@@ -807,18 +798,18 @@ class EventTestCase(unittest.TestCase):
         self.client.post('/api/events', headers=headers3, data=self.event3_data, content_type='application/json')
 
         # User searches for an event whose location is in Uganda
-        result = self.client.post('/api/search', headers=headers4, data=json.dumps({'location': 'Uganda'}),
+        result = self.client.post('/api/search?q=Uganda', headers=headers4,
                                   content_type='application/json')
 
         # User finds the event held in Mombasa
-        events = json.loads(result.data.decode())['Events found in this location']
+        events = json.loads(result.data.decode())['The following events were found']
         self.assertEqual(1, len(events))
 
         # Test that no event is returned if no event exists with the given location in the search parameter
 
-        result1 = self.client.post('/api/search', headers=headers4, data=json.dumps({'location': 'Kisumu'}),
+        result1 = self.client.post('/api/search?q=Kisumu', headers=headers4,
                                    content_type='application/json')
-        self.assertIn(b'No Events Found', result1.data)
+        self.assertIn(b'No such event Found', result1.data)
 
     def test_successful_event_searching_by_category(self):
         """
@@ -831,7 +822,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user1()
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
-        headers3 = {'x-access-token': access_token1}
+        headers3 = {'Authorization': 'Bearer ' + access_token1}
 
         # Register user two
         self.register_user2()
@@ -839,7 +830,7 @@ class EventTestCase(unittest.TestCase):
         result = self.login_user2()
         # Get the token generated for user two
         access_token2 = json.loads(result.data.decode())['token']
-        headers4 = {'x-access-token': access_token2}
+        headers4 = {'Authorization': 'Bearer ' + access_token2}
 
         # User creates an event with Learning as the category
         self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
@@ -851,16 +842,16 @@ class EventTestCase(unittest.TestCase):
         self.client.post('/api/events', headers=headers3, data=self.event3_data, content_type='application/json')
 
         # User searches and finds the events that have learning as their category
-        result = self.client.post('/api/search', headers=headers4, data=json.dumps({'category': 'learning'}),
+        result = self.client.post('/api/search?q=learning', headers=headers4,
                                   content_type='application/json')
-        events = json.loads(result.data.decode())['Events belonging to this category']
+        events = json.loads(result.data.decode())['The following events were found']
         self.assertEqual(2, len(events))
 
         # Test that no event is returned if no event exists with the category given in the search parameter
 
-        result1 = self.client.post('/api/search', headers=headers4, data=json.dumps({'category': 'Adventure'}),
+        result1 = self.client.post('/api/search?q=Adventure', headers=headers4,
                                    content_type='application/json')
-        self.assertIn(b'No Events Found', result1.data)
+        self.assertIn(b'No such event Found', result1.data)
 
     def tearDown(self):
         db.session.remove()
