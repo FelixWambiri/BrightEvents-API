@@ -98,18 +98,19 @@ def register():
 # Login route
 @auth.route('/login', methods=['POST'])
 def login():
-    auth = request.authorization
-    if not auth or not auth.username or not auth.password:
+    auth = request.get_json()
+    if not auth['email'] or not auth['password']:
         return make_response('Could not verify because not all fields were entered', 401,
                              {'WWW-Authenticate': 'Basic realm-"Login required"'})
-    user = user_accounts.get_specific_user(auth.username)
+    user = user_accounts.get_specific_user(auth['email'])
+    
     if not user:
         return make_response('Could not verify because it did not find the user in the database', 401,
                              {'WWW-Authenticate': 'Basic realm-"Login required"'})
-    if user.compare_hashed_password(auth.password):
-        token = jwt.encode({'id': user.id, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)},
+    if user.compare_hashed_password(auth['password']):
+        token = jwt.encode({'id': user.id, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=120)},
                            BaseConfig.SECRET_KEY)
-        return jsonify({'token': token.decode('UTF-8')}), 200
+        return jsonify({'token': token.decode()}), 200
     else:
         response = jsonify({"Warning": 'Invalid Credentials'})
         response.status_code = 401  # Unauthorized
@@ -120,9 +121,10 @@ def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = None
-        if 'x-access-token' in request.headers:
-            token = request.headers['x-access-token']
-
+        authHeader = request.headers.get('Authorization',None)
+        if authHeader:
+            token = str(authHeader.replace("Bearer ",""))
+            
         if not token:
             return jsonify({'message': 'Token is missing'}), 401
         try:
@@ -138,9 +140,13 @@ def token_required(f):
                              ' as to why',
                 'Token Error': 'Token is invalid, You are using the Reset Password Token to perform the request',
                 'Key Error': 'Please check to see if you have entered all the attributes needed to perform this request'}), 500
-        except Exception:
+        except jwt.ExpiredSignatureError:
+            print("An error occured, The token you are passing is expired")
             return jsonify({'message': 'Token is invalid'}), 401
 
+        except jwt.InvalidTokenError:
+            print("An error occured, The token you are passing is invalid")
+            return jsonify({'message': 'Token is invalid'}), 401
     return decorated
 
 
@@ -161,7 +167,7 @@ def acquire_token():
         except socket.gaierror:
             return jsonify({'Error': 'Sorry an error has been encountered while sending you a confirmation link.'
                                      'Check your internet connection first it may be the reason'})
-    return jsonify({"Info": "There does not exist a user by that email address"}), 404
+    return jsonify({"Warning": "There does not exist a user by that email address"}), 404
 
 
 @auth.route('/confirm/<token>')
@@ -169,33 +175,33 @@ def confirm(token):
     """This route contains the token that will be used to reset password"""
     res = User.confirm(token)
     if res == False:
-        return jsonify({"message": res}), 403
+        return jsonify({"Warning": res}), 403
     return jsonify({"message": "Extract the token below and go ahead to reset your password", "token": token}), 200
 
 
 @auth.route('/reset_password', methods=['PUT'])
 def reset_password():
-    """
-    This route resets the password and takes the token received in rhe email and the new password
-    :return:
-    """
-    data = request.get_json()
-    try:
-        token = data['token']
-    except KeyError:
-        return jsonify({"Info": "Please input the token received in your email and your new password"}),
-    res = User.confirm(token)
-    if res == False:
-        return jsonify({"message": res}), 403
-    user = res
-    new_pass = password_validation(data)
+        """
+        This route resets the password and takes the token received in the email and the new password
+        :return:
+        """
+    
+        data = request.get_json()
+        try:
+            token = data['token']
+        except KeyError:
+            return jsonify({"Info": "Please input the token received in your email and your new password"}),
+        res = User.confirm(token)
+        if res == False:
+            return jsonify({"message": res}), 403
+        user = res
+        new_pass = password_validation(data)
 
-    if new_pass is not data['new_pass']:
-        return jsonify({"message": new_pass}), 400
-    # new_pass = data["new_pass"]
-    user.pw_hash = generate_password_hash(data["new_pass"])
-    db.session.commit()
-    return jsonify({"message": "The password was reset successfully,Now you can proceed to login"}), 200
+        if new_pass is not data['new_pass']:
+            return jsonify({"message": new_pass}), 400
+        user.pw_hash = generate_password_hash(data["new_pass"])
+        db.session.commit()
+        return jsonify({"message": "The password was reset successfully,Now you can proceed to login"}), 200
 
 
 # Route to change password
@@ -226,7 +232,7 @@ def change_password(current_user):
 @auth.route('/logout', methods=['POST'])
 @token_required
 def logout(current_user):
-    token = request.headers.get('x-access-token')
+    token = request.headers.get('Authorization').decode('utf-8').replace('Bearer ','')
     if token:
         data = jwt.decode(token, BaseConfig.SECRET_KEY)
         if not isinstance(data, str) and not BlacklistToken.check_blacklist(token):
