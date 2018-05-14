@@ -13,6 +13,7 @@ class AuthTestCase(unittest.TestCase):
         """ Set up reusable test variables. """
         self.app = create_app(config_name='testing')
         self.app.app_context().push()
+        
         # Define the details needed to register a person
         self.user_data = json.dumps(
             {
@@ -28,11 +29,7 @@ class AuthTestCase(unittest.TestCase):
                 'password': 'FelixWambiri12@3'
             }
         )
-        # Define the details needed to login this user
-        self.headers = {
-            'Authorization': 'Basic %s' %
-                             b64encode(b"felo@gmail.com:FelixWambiri12@3")
-                             .decode("ascii")}
+        
         with self.app.app_context():
             self.client = self.app.test_client()
             db.session.close()
@@ -127,32 +124,40 @@ class AuthTestCase(unittest.TestCase):
             result['Warning'], 'Please enter a valid email')
 
     def test_successful_user_login(self):
-        self.client.post('/api/auth/register', data=self.user_data, content_type='application/json')
-        res_1 = self.client.post("/api/auth/login", headers=self.headers, content_type='application/json')
-        self.assertIn(b'token', res_1.data)
+        res = self.client.post('/api/auth/register', data=self.user_data, content_type='application/json')
+        res_1 = self.client.post("/api/auth/login", data=self.user_data, content_type='application/json')
+        res2 = json.loads(res_1.data.decode())
+        self.assertEqual(res_1.status_code, 200)
+        self.assertIn(b'token', res2)
 
     def test_unsuccessful_login_without_registration(self):
-        res_1 = self.client.post("/api/auth/login", headers=self.headers, content_type='application/json')
+        res_1 = self.client.post("/api/auth/login", data=self.user_data, content_type='application/json')
         self.assertIn(b'Could not verify because it did not find the user in the database', res_1.data)
 
     def test_unsuccessful_login_with_invalid_login_credentials(self):
         self.client.post('/api/auth/register', data=self.user_data, content_type='application/json')
-        res_1 = self.client.post("/api/auth/login", headers={
-            'Authorization': 'Basic %s' %
-                             b64encode(b"felo@gmail.com:FelixWambiri12@3456")
-                                 .decode("ascii")}, content_type='application/json')
+        self.user3_data = json.dumps(
+            {
+                'username': 'Feloh',
+                'email': 'felo@gmail.com',
+                'password': 'FelixWambiri12@3457'
+            }
+        )
+        res_1 = self.client.post("/api/auth/login",data=self.user3_data, content_type='application/json')
         self.assertIn(b'Invalid Credentials', res_1.data)
 
     def test_successful_logout(self):
         """ Test for successful logout before token expiration """
         # The user is registered
         self.client.post('/api/auth/register', data=self.user_data, content_type='application/json')
+
         # The user is logged in
-        result = self.client.post("/api/auth/login", headers=self.headers, content_type='application/json')
+        result = self.client.post("/api/auth/login", data=self.user_data, content_type='application/json')
         access_token = json.loads(result.data.decode())['token']
-        header = {'x-access-token': access_token}
+        header = {'Authorization': 'Bearer ' + access_token}
+
         # The user is logged out successfully if the token has not yet expired
-        res = self.client.post("/api/auth/logout", headers=header, content_type='application/json')
+        res = self.client.post("/api/auth/logout", data={}, headers=header, content_type='application/json')
         data = json.loads(res.data.decode())
         self.assertIn("Successfully logged out", str(data))
         self.assertEqual(res.status_code, 200)
