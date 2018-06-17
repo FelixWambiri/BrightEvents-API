@@ -1,5 +1,7 @@
 alembic==0.9.6
+arrow==0.12.1
 autoenv==1.0.0
+backports.functools-lru-cache==1.5
 blinker==1.4
 certifi==2018.1.18
 chardet==3.0.4
