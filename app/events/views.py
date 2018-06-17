@@ -6,16 +6,20 @@ from sqlalchemy import or_
 from app.auth.views import token_required
 from app.events import event
 from app.models.event import Event
-
+import arrow
 
 def date_validation(date_hosted):
     """check that the event date is not past"""
+    
+    new_date = arrow.get(date_hosted).format('MM-DD-YYYY')
     try:
-        date = datetime.strptime(date_hosted, '%m-%d-%Y').date()
+        date = datetime.strptime(new_date, '%m-%d-%Y').date()
 
-    except ValueError:
+    except ValueError as e:
+        print("e",e)
         return "You have entered an incorrect date format, date should be MM-DD-YY format"
-
+    
+    # date = date_hosted
     if date < date.today():
         return "The event cannot have a past date as the date it is going to be hosted"
     return date_hosted
@@ -94,7 +98,7 @@ def create_events(current_user):
                                                 description=description)
 
         response = jsonify({"Success": "Event created successfully",
-                            "event": {"name": event_found.name, "category": event_found.category,
+                            "event": {"name": event_found.name, "id":event_found.id,"category": event_found.category,
                                       "location": event_found.location, "date_hosted": event_found.date_hosted,
                                       "description": event_found.description}})
 
@@ -108,6 +112,7 @@ def create_events(current_user):
 @token_required
 def update_events(current_user, event_id):
     data = request.get_json()
+    print("the data is ", data, event_id)
     name = data['name']
     category = data['category']
     location = data['location']
@@ -115,7 +120,7 @@ def update_events(current_user, event_id):
     description = data['description']
     if name != '' or category != '' or location != '' or date_hosted != '' or description != '':
         validation_output = update_data_validation(data)
-        date_validation_output = update_date_validation(data['date_hosted'])
+        date_validation_output = date_validation(data['date_hosted'])
 
         if validation_output is not data:
             return jsonify({"message": validation_output}), 400
@@ -186,26 +191,26 @@ def get_an_individuals_all_events(current_user, limit=6, page=1):
         output = []
         if event_found:
             for s_event in event_found:
-                event_data = {'name': s_event.name, 'category': s_event.category, 'location': s_event.location,
+                event_data = {'name': s_event.name, "id":s_event.id, 'category': s_event.category, 'location': s_event.location,
                               'date_hosted':
                                   s_event.date_hosted, 'description': s_event.description}
                 output.append(event_data)
             return jsonify({'events': output})
-        return jsonify({'Message': 'No Events Found'}), 404
-    return jsonify({'Message': 'No Events Found'}), 404
+        return jsonify({'events': []}), 200
+    return jsonify({'events': []}), 200
 
 
 # Route to display all events
 @event.route('/events', methods=['GET'])
 @event.route('/events/page=<int:page>', methods=['GET'])
 @event.route('/events/page=<int:page>&limit=<int:limit>', methods=['GET'])
-def get_all_events(limit=4, page=1):
+def get_all_events(limit=6, page=1):
     if Event.query.count() > 0:
         event_found = Event.query.paginate(page, per_page=limit, error_out=False).items
         output = []
         if event_found:
             for s_event in event_found:
-                event_data = {'name': s_event.name, 'category': s_event.category, 'location': s_event.location,
+                event_data = {'id':s_event.id, 'name': s_event.name, 'category': s_event.category, 'location': s_event.location,
                               'date_hosted':
                                   s_event.date_hosted, 'description': s_event.description}
                 output.append(event_data)
@@ -239,17 +244,17 @@ def rsvp_event(current_user, event_id):
                     user_data = {'username': user.username, 'email': user.email}
                     reservations.append(user_data)
                 return jsonify({'Attendants': reservations})
-            return jsonify({"Message": "No reservations have been made to this event yet"})
+            return jsonify({'Attendants': []})
         return jsonify({'Warning': 'The event you are to view a reservations for does not exist'}), 404
 
 # Route for searching events
 @event.route('/search', methods=['POST'])
 @event.route('/search/page=<int:page>&limit=<int:limit>', methods=['POST'])
 @event.route('/search/page=<int:page>', methods=['POST'])
-@token_required
-def combined_search(current_user, limit=9, page=1):
+# @token_required
+def combined_search(limit=9, page=1):
     q = request.args.get('q')
-    if q:
+    if q and len(q)>0:
         events = Event.query.filter(or_(Event.name.ilike('%{}%'.format(q)),Event.category.ilike('%{}%'.format(q)),Event.location.ilike('%{}%'.format(q)))).all()
         events_list = []
         if events:
@@ -257,8 +262,15 @@ def combined_search(current_user, limit=9, page=1):
                 event_data = {'name': s_event.name, 'category': s_event.category, 'location': s_event.location,
                             'date_hosted': s_event.date_hosted, 'description': s_event.description}
                 events_list.append(event_data)
-            return jsonify({'The following events were found': events_list}), 200
+            return jsonify({'events': events_list}), 200
         return jsonify({'message': 'No such event Found'}), 404
-
     else:
-        return jsonify({'Warning':'Unknown error occured'}), 400
+        events = Event.query.all()
+        events_list = []
+        if events:
+            for s_event in events:
+                event_data = {'name': s_event.name, 'category': s_event.category, 'location': s_event.location,
+                            'date_hosted': s_event.date_hosted, 'description': s_event.description}
+                events_list.append(event_data)
+            return jsonify({'events': events_list}), 200
+        return jsonify({'message':"Something went terribly wrong"}), 400

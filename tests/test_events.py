@@ -20,7 +20,7 @@ class EventTestCase(unittest.TestCase):
                 'name': 'Bootcamp',
                 'category': 'Learning',
                 'location': 'Nairobi',
-                'date_hosted': '8-8-2018',
+                'date_hosted': '8-8-2019',
                 'description': 'This is the best learning experience'
             }
         )
@@ -29,7 +29,7 @@ class EventTestCase(unittest.TestCase):
                 'name': 'Bootcamp_21',
                 'category': 'Learning',
                 'location': 'Uganda',
-                'date_hosted': '8-8-2018',
+                'date_hosted': '8-8-2019',
                 'description': 'This is the best learning experience'
             }
         )
@@ -38,7 +38,7 @@ class EventTestCase(unittest.TestCase):
                 'name': 'Sepetuka',
                 'category': 'social',
                 'location': 'mombasa',
-                'date_hosted': '8-8-2018',
+                'date_hosted': '8-8-2019',
                 'description': 'This is the best social experience'
             }
         )
@@ -47,7 +47,7 @@ class EventTestCase(unittest.TestCase):
                 'name': 'Blaze',
                 'category': 'Cooporate',
                 'location': 'Nakuru',
-                'date_hosted': '8-8-2018',
+                'date_hosted': '8-8-2019',
                 'description': 'This is the best corporate experience'
             }
         )
@@ -277,7 +277,7 @@ class EventTestCase(unittest.TestCase):
                 'name': 'BootCamp Uganda',
                 'category': 'Learning',
                 'location': 'Uganda',
-                'date_hosted': '8-8-2018',
+                'date_hosted': '8-8-2019',
                 'description': 'This is the best learning experience'
             }
         ), content_type='application/json')
@@ -306,7 +306,7 @@ class EventTestCase(unittest.TestCase):
                 'name': 'Self Learning clinic',
                 'category': '',
                 'location': 'Nairobi',
-                'date_hosted': '8-8-2018',
+                'date_hosted': '8-8-2019',
                 'description': ''
             }
         ), content_type='application/json')
@@ -349,7 +349,7 @@ class EventTestCase(unittest.TestCase):
                 'name': 'BootCamp Uganda',
                 'category': 'Learning',
                 'location': 'Uganda',
-                'date_hosted': '8-8-2018',
+                'date_hosted': '8-8-2019',
                 'description': 'This is the best learning experience'
             }
         ), content_type='application/json')
@@ -375,7 +375,7 @@ class EventTestCase(unittest.TestCase):
                 'name': 'BootCamp Uganda',
                 'category': 'Learning',
                 'location': 'Uganda',
-                'date_hosted': '8-8-2018',
+                'date_hosted': '8-8-2019',
                 'description': 'This is the best learning experience'
             }
         ), content_type='application/json')
@@ -393,12 +393,14 @@ class EventTestCase(unittest.TestCase):
         # Get the token generated
         access_token1 = json.loads(result.data.decode())['token']
         headers3 = {'Authorization': 'Bearer ' + access_token1}
-
+        print("The access token is >>>>>>>>>>>>>>>>>>>.",access_token1)
+        print("The header is +++++++++++++++++++++++++++",headers3)
         # The user creates the event
-        self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
-
+        resp = self.client.post('/api/events', headers=headers3, data=self.event1_data, content_type='application/json')
+        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",resp)
         # The user deletes event successfully
         res = self.client.delete('/api/events/1', headers=headers3)
+        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",res)
         self.assertIn(b'Event deleted successfully', res.data)
         self.assertEqual(res.status_code, 200)
 
@@ -802,14 +804,14 @@ class EventTestCase(unittest.TestCase):
                                   content_type='application/json')
 
         # User finds the event held in Mombasa
-        events = json.loads(result.data.decode())['The following events were found']
+        events = json.loads(result.data.decode())['events']
         self.assertEqual(1, len(events))
 
         # Test that no event is returned if no event exists with the given location in the search parameter
 
         result1 = self.client.post('/api/search?q=Kisumu', headers=headers4,
                                    content_type='application/json')
-        self.assertIn(b'No such event Found', result1.data)
+        self.assertIn(b'message', result1.data)
 
     def test_successful_event_searching_by_category(self):
         """
@@ -844,12 +846,12 @@ class EventTestCase(unittest.TestCase):
         # User searches and finds the events that have learning as their category
         result = self.client.post('/api/search?q=learning', headers=headers4,
                                   content_type='application/json')
-        events = json.loads(result.data.decode())['The following events were found']
+        events = json.loads(result.data.decode())['events']
         self.assertEqual(2, len(events))
 
         # Test that no event is returned if no event exists with the category given in the search parameter
 
-        result1 = self.client.post('/api/search?q=Adventure', headers=headers4,
+        result1 = self.client.post('/api/search?q=Adventure',
                                    content_type='application/json')
         self.assertIn(b'No such event Found', result1.data)
 

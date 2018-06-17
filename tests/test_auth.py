@@ -85,7 +85,7 @@ class AuthTestCase(unittest.TestCase):
         self.assertEqual(second_res.status_code, 202)
         result = json.loads(second_res.data.decode())
         self.assertEqual(
-            result['Warning'], "User already exists with email address, choose another email address")
+            result['message'], "User already exists with email address, choose another email address")
 
     def test_unsuccessful_registration_of_a_user_using_invalid_details_with_empty_fields(self):
         res = self.client.post("/api/auth/register",
@@ -97,7 +97,7 @@ class AuthTestCase(unittest.TestCase):
         #  Test if empty spaces are passed the request returns a warning
         result = json.loads(res.data.decode())
         self.assertEqual(
-            result['Warning'], 'This fields must be more than 5 characters and not empty spaces')
+            result['message'], 'This fields must be more than 5 characters and not empty spaces')
 
     def test_unsuccessful_registration_of_a_user_using_invalid_details_with_short_fields(self):
         res = self.client.post("/api/auth/register",
@@ -109,7 +109,7 @@ class AuthTestCase(unittest.TestCase):
         # Test if short data is passed the request returns a warning
         result = json.loads(res.data.decode())
         self.assertEqual(
-            result['Warning'], 'This fields must be more than 5 characters and not empty spaces')
+            result['message'], 'This fields must be more than 5 characters and not empty spaces')
 
     def test_unsuccessful_registration_of_a_user_using_invalid_details_with_invalid_email(self):
         res = self.client.post("/api/auth/register",
@@ -121,7 +121,7 @@ class AuthTestCase(unittest.TestCase):
         # Test if invalid data are passed the service returns a warning
         result = json.loads(res.data.decode())
         self.assertEqual(
-            result['Warning'], 'Please enter a valid email')
+            result['message'], 'Please enter a valid email')
 
     def test_successful_user_login(self):
         res = self.client.post('/api/auth/register', data=self.user_data, content_type='application/json')
@@ -132,7 +132,7 @@ class AuthTestCase(unittest.TestCase):
 
     def test_unsuccessful_login_without_registration(self):
         res_1 = self.client.post("/api/auth/login", data=self.user_data, content_type='application/json')
-        self.assertIn(b'Could not verify because it did not find the user in the database', res_1.data)
+        self.assertIn(b'User not found, Login failed', res_1.data)
 
     def test_unsuccessful_login_with_invalid_login_credentials(self):
         self.client.post('/api/auth/register', data=self.user_data, content_type='application/json')

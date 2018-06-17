@@ -58,10 +58,10 @@ class User(db.Model):
     @staticmethod
     def confirm(token):
         s = Serializer(current_app.config['SECRET_KEY'])
-
         try:
             data = s.loads(token)
-        except Exception:
+        except Exception as e:
+            print(e)
             return False
         user = User.query.filter_by(id=data.get('confirm')).first()
         return user

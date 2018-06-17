@@ -28,13 +28,14 @@ def index():
 
 
 def password_validation(data):
-    if len(data['new_pass'].strip()) < 5 or not re.search("[a-z]", data['new_pass'].strip()) or not \
-            re.search("[0-9]", data['new_pass'].strip()) or not re.search("[A-Z]", data['new_pass'].strip()) \
-            or not re.search("[$#@]", data['new_pass'].strip()):
+    print("the pass data is ", data)
+    if len(data['password'].strip()) < 5 or not re.search("[a-z]", data['password'].strip()) or not \
+            re.search("[0-9]", data['password'].strip()) or not re.search("[A-Z]", data['password'].strip()) \
+            or not re.search("[$#@]", data['password'].strip()):
         return "Invalid Password.The password must contain at least one lowercase character,one digit,one upper " \
                "case character and one special character"
     else:
-        return data['new_pass']
+        return data['password']
 
 
 def send_async_email(app, msg):
@@ -68,27 +69,27 @@ def register():
 
     # Validate the length of these fields to be more than five characters
     if len(username) < 5 or len(email) < 5 or len(password) < 5:
-        return jsonify({"Warning": "This fields must be more than 5 characters and not empty spaces"})
+        return jsonify({"message": "This fields must be more than 5 characters and not empty spaces"}), 400
 
     # Validate the username against special characters and spaces
     if not re.match("^[a-zA-Z0-9_ ]*$", username):
         return jsonify({
-            "Warning": "Invalid username.The username can contain letters, digits and underscore but no special"
-                       " characters or space"})
+            "message": "Invalid username.The username can contain letters, digits and underscore but no special"
+                       " characters or space"}), 400
 
     # Validate the email to be properly formatted
     if not re.match(r"([\w.-]+)@([\w.-]+)(\.[\w.]+$)", email):
-        return jsonify({"Warning": "Please enter a valid email"})
+        return jsonify({"message": "Please enter a valid email"})
 
     # Validate the password to comprised of certain characters to make it more stronger and secure
     if not re.search("[a-z]", password) or not re.search("[0-9]", password) or not re.search("[A-Z]",
                                                                                              password) or not re.search(
             "[$#@]", password):
         return jsonify({
-            "Warning": "Invalid Password.The password must contain at least one lowercase character,one digit,"
-                       "one upper case character and one special character"})
+            "message": "Invalid Password.The password must contain at least one lowercase character,one digit,"
+                       "one upper case character and one special character"}), 400
     if user_accounts.get_specific_user(email):
-        return jsonify({"Warning": "User already exists with email address, choose another email address"}), 202
+        return jsonify({"message": "User already exists with email address, choose another email address"}), 202
     else:
         user_accounts.create_user(username=username, email=email, password=password)
         response = {'message': 'You have been registered successfully and can proceed to login'}
@@ -105,14 +106,15 @@ def login():
     user = user_accounts.get_specific_user(auth['email'])
     
     if not user:
-        return make_response('Could not verify because it did not find the user in the database', 401,
-                             {'WWW-Authenticate': 'Basic realm-"Login required"'})
+        response = jsonify({"message": 'User not found, Login failed'})
+        response.status_code = 401 
+        return response
     if user.compare_hashed_password(auth['password']):
-        token = jwt.encode({'id': user.id, 'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=120)},
+        token = jwt.encode({'id': user.id, 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=720)},
                            BaseConfig.SECRET_KEY)
         return jsonify({'token': token.decode()}), 200
     else:
-        response = jsonify({"Warning": 'Invalid Credentials'})
+        response = jsonify({"message": 'Invalid Credentials'})
         response.status_code = 401  # Unauthorized
         return response
 
@@ -170,10 +172,11 @@ def acquire_token():
     return jsonify({"Warning": "There does not exist a user by that email address"}), 404
 
 
-@auth.route('/confirm/<token>')
+@auth.route('/confirm/<token>',methods=['GET'])
 def confirm(token):
     """This route contains the token that will be used to reset password"""
     res = User.confirm(token)
+    print("token is ", res)
     if res == False:
         return jsonify({"Warning": res}), 403
     return jsonify({"message": "Extract the token below and go ahead to reset your password", "token": token}), 200
@@ -187,6 +190,7 @@ def reset_password():
         """
     
         data = request.get_json()
+        print("the incoming data is ", data)
         try:
             token = data['token']
         except KeyError:
@@ -197,9 +201,9 @@ def reset_password():
         user = res
         new_pass = password_validation(data)
 
-        if new_pass is not data['new_pass']:
+        if new_pass is not data['password']:
             return jsonify({"message": new_pass}), 400
-        user.pw_hash = generate_password_hash(data["new_pass"])
+        user.pw_hash = generate_password_hash(data["password"])
         db.session.commit()
         return jsonify({"message": "The password was reset successfully,Now you can proceed to login"}), 200
 
