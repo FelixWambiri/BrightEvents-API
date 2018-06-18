@@ -161,7 +161,7 @@ def acquire_token():
     data = request.get_json()
     user = User.query.filter_by(email=data['email']).first()
     if user:
-        token = user.generate_confirmation_token()
+        token = user.generate_confirmation_token().decode('utf8')
         try:
             send_email(user.email, 'Confirm Your Account', 'auth/email/confirm', user=user, token=token)
             response = {"message": "a confirmation email has been sent to {}".format(user.email)}
