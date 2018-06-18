@@ -2,7 +2,7 @@ Dear {{ user.username }},
 
 Welcome to BrightEvents!
 To get your password reset token please click on the following link:
-{{ "http://localhost:3000/confirm/"+token }}
+{{ "https://bright-events-react-app.herokuapp.com/confirm/"+token }}
 
 Regards,
 
