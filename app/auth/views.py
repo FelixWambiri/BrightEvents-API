@@ -236,7 +236,7 @@ def change_password(current_user):
 @auth.route('/logout', methods=['POST'])
 @token_required
 def logout(current_user):
-    token = request.headers.get('Authorization').decode('utf-8').replace('Bearer ','')
+    token = request.headers.get('Authorization').replace('Bearer ','')
     if token:
         data = jwt.decode(token, BaseConfig.SECRET_KEY)
         if not isinstance(data, str) and not BlacklistToken.check_blacklist(token):

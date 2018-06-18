@@ -128,7 +128,7 @@ class AuthTestCase(unittest.TestCase):
         res_1 = self.client.post("/api/auth/login", data=self.user_data, content_type='application/json')
         res2 = json.loads(res_1.data.decode())
         self.assertEqual(res_1.status_code, 200)
-        self.assertIn(b'token', res2)
+        self.assertIn('token', res2)
 
     def test_unsuccessful_login_without_registration(self):
         res_1 = self.client.post("/api/auth/login", data=self.user_data, content_type='application/json')
